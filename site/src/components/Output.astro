@@ -1,0 +1,96 @@
+---
+/**
+ * One saved notebook output.
+ *
+ * Saved outputs are preserved, never replaced by screenshots. Plotly figures
+ * stay interactive; images are served as files rather than inline data URIs.
+ * A GUI window closing is shown as a neutral note, not as a failure.
+ */
+interface Props { out: any }
+const { out } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const kb = (n: number) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.round(n / 1024)} KB`);
+---
+
+{out.kind === 'stream' && (
+  <div class="nb-out">
+    <div class="nb-out-head">{out.stream === 'stderr' ? 'Dalje (stderr)' : out.stream === 'result' ? 'Rezultat' : 'Dalje'}</div>
+    <pre>{out.text}</pre>
+    {out.truncated && <div class="nb-out-head" style="border-top:1px solid var(--border);border-bottom:0">Dalja u shkurtua — shkarkoni fletoren për tekstin e plotë</div>}
+  </div>
+)}
+
+{out.kind === 'image' && (
+  <div class="nb-out">
+    <div class="nb-out-img">
+      <img src={`${base}nb/${out.file}`} alt="Figura e prodhuar nga kodi i mësipërm" loading="lazy" decoding="async" />
+    </div>
+  </div>
+)}
+
+{out.kind === 'plotly' && (
+  <div class="nb-out">
+    <div class="nb-out-head">Grafik interaktiv</div>
+    <plotly-figure data-src={`${base}nb/${out.file}`} data-size={out.bytes}>
+      <noscript>
+        <p style="padding:1em;margin:0;color:var(--ink-3);font-size:.88rem">
+          Ky grafik kërkon JavaScript. Shkarkoni fletoren për ta parë lokalisht.
+        </p>
+      </noscript>
+    </plotly-figure>
+  </div>
+)}
+
+{out.kind === 'widget' && (
+  <div class="nb-out nb-out-benign">
+    <div class="nb-out-note">
+      <span class="n-ico" aria-hidden="true">◌</span>
+      <div>
+        <strong>Kontroll interaktiv i Jupyter-it (ipywidgets)</strong>
+        <p>Butonat e këtij ushtrimi kërkojnë një kernel Jupyter aktiv, prandaj nuk rirenderohen këtu. Shkarkoni fletoren dhe ekzekutojeni lokalisht.</p>
+      </div>
+    </div>
+  </div>
+)}
+
+{out.kind === 'inert-js' && (
+  <div class="nb-out nb-out-benign">
+    <div class="nb-out-note">
+      <span class="n-ico" aria-hidden="true">◌</span>
+      <div>
+        <strong>Dalje JavaScript e fletores</strong>
+        <p>Kjo dalje nuk ekzekutohet në faqe për arsye sigurie. Ajo është pjesë e kontrollit interaktiv të fletores.</p>
+      </div>
+    </div>
+  </div>
+)}
+
+{out.kind === 'html' && (
+  <div class="nb-out">
+    <div class="nb-out-head">Dalje HTML</div>
+    <div style="padding:.7em .9em" set:html={out.html} />
+  </div>
+)}
+
+{out.kind === 'error' && out.benign && (
+  <div class="nb-out nb-out-benign">
+    <div class="nb-out-note">
+      <span class="n-ico" aria-hidden="true">✕</span>
+      <div>
+        <strong>{out.title}</strong>
+        <p>{out.note}</p>
+      </div>
+    </div>
+  </div>
+)}
+
+{out.kind === 'error' && !out.benign && (
+  <div class="nb-out nb-out-error">
+    <div class="nb-out-head">Gabim gjatë ekzekutimit{out.name ? ` · ${out.name}` : ''}</div>
+    {out.evalue && <div style="padding:.6em .9em 0;font-size:.86rem"><code>{out.evalue}</code></div>}
+    <details>
+      <summary style="cursor:pointer;padding:.6em .9em;font-size:.82rem;color:var(--ink-3)">Shfaq gjurmën e plotë</summary>
+      <pre>{out.traceback}</pre>
+    </details>
+  </div>
+)}

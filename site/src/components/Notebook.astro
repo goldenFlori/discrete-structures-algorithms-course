@@ -1,0 +1,156 @@
+---
+/**
+ * Renders the web-safe representation of a notebook.
+ * Nothing here executes notebook code; everything was prepared at build time.
+ */
+import CodeCell from './CodeCell.astro';
+
+interface Slice { from: number | null; to: number | null }
+interface Props {
+  notebook: any;
+  /** Optional cell ranges, used when one notebook serves two laboratories. */
+  slice?: Slice[] | null;
+  /** Collapse a saved output that would give away a homework answer. */
+  spoilerWarning?: string;
+}
+
+const { notebook, slice = null, spoilerWarning } = Astro.props;
+
+const cells = slice?.length
+  ? slice.flatMap((r) =>
+      notebook.cells.slice(r.from ?? 0, r.to ?? notebook.cells.length),
+    )
+  : notebook.cells;
+
+const KIND_LABEL: Record<string, { label: string; cls: string }> = {
+  homework:   { label: 'Detyrë Shtëpie',     cls: 'sec-homework' },
+  classwork:  { label: 'Punë në Klasë',      cls: 'sec-classwork' },
+  reflect:    { label: 'Mendoni Pak',        cls: 'sec-reflect' },
+  scenario:   { label: 'Skenar Real',        cls: 'sec-scenario' },
+  exercise:   { label: 'Ushtrim',            cls: 'sec-exercise' },
+  theory:     { label: 'Teori',              cls: 'sec-theory' },
+  complexity: { label: 'Kompleksiteti',      cls: 'sec-complexity' },
+};
+---
+
+<div class="notebook">
+  {cells.map((cell: any) => {
+    if (cell.type === 'markdown') {
+      const meta = KIND_LABEL[cell.kind];
+      const tagged = meta && cell.heading;
+      return (
+        <section
+          id={cell.id || undefined}
+          class={`nb-md ${tagged ? `nb-tagged ${meta.cls}` : ''}`}
+        >
+          {tagged && (
+            <div class="sec-flag">
+              <span class="sec-flag-label">{meta.label}</span>
+            </div>
+          )}
+          {cell.heading && (
+            <a class="nb-heading-link" href={`#${cell.id}`}>
+              {cell.level <= 2
+                ? <h2 class="nb-heading">{cell.heading}<span class="anchor" aria-hidden="true">#</span></h2>
+                : <h3 class="nb-heading">{cell.heading}<span class="anchor" aria-hidden="true">#</span></h3>}
+            </a>
+          )}
+          <div class="nb-body" set:html={cell.html} />
+        </section>
+      );
+    }
+    if (cell.type === 'code') {
+      return <CodeCell cell={cell} spoilerWarning={spoilerWarning} />;
+    }
+    return null;
+  })}
+</div>
+
+<style is:global>
+  .notebook { max-width: var(--measure); }
+
+  .nb-md { scroll-margin-top: calc(var(--nav-h) + 20px); }
+  .nb-body > :first-child { margin-top: 0; }
+
+  .nb-heading-link { text-decoration: none; color: inherit; display: block; }
+  .nb-heading-link:hover { color: inherit; }
+  .nb-heading { position: relative; }
+  .nb-heading .anchor {
+    position: absolute; left: -0.85em; top: 0;
+    color: var(--ink-faint); font-weight: 400; opacity: 0;
+    transition: opacity .12s;
+  }
+  .nb-heading-link:hover .anchor, .nb-heading-link:focus-visible .anchor { opacity: 1; }
+  @media (max-width: 720px) { .nb-heading .anchor { display: none; } }
+
+  /* --- Sections with their own visual identity ---------------------- */
+
+  .nb-tagged {
+    margin: 2.2em 0;
+    padding: 1.1em 1.3em 1.2em;
+    border: 1px solid var(--border);
+    border-left-width: 3px;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    background: var(--surface);
+  }
+  .nb-tagged .nb-heading { margin-top: 0; }
+  .sec-flag { margin-bottom: .55em; }
+  .sec-flag-label {
+    display: inline-flex; align-items: center; gap: .4em;
+    font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  }
+
+  .sec-exercise   { border-left-color: var(--accent-line); background: var(--surface); }
+  .sec-exercise   .sec-flag-label { color: var(--accent); }
+
+  .sec-theory     { border-left-color: var(--border-strong); background: var(--surface-2); }
+  .sec-theory     .sec-flag-label { color: var(--ink-3); }
+
+  .sec-scenario   { border-left-color: var(--ok-line); background: var(--ok-soft); }
+  .sec-scenario   .sec-flag-label { color: var(--ok); }
+  .sec-scenario   .nb-table-wrap { background: var(--surface); }
+
+  .sec-reflect    { border-left-color: var(--violet-line); background: var(--violet-soft); }
+  .sec-reflect    .sec-flag-label { color: var(--violet); }
+  .sec-reflect    ol { counter-reset: q; list-style: none; padding-left: 0; }
+  .sec-reflect    ol > li {
+    counter-increment: q; position: relative; padding-left: 2.1em; margin: .6em 0;
+  }
+  .sec-reflect    ol > li::before {
+    content: counter(q); position: absolute; left: 0; top: .1em;
+    width: 1.5em; height: 1.5em; display: grid; place-items: center;
+    border-radius: 50%; background: var(--violet); color: #fff;
+    font: 700 .72rem/1 var(--font-mono);
+  }
+
+  .sec-classwork  { border-left-color: var(--warn-line); background: var(--warn-soft); }
+  .sec-classwork  .sec-flag-label { color: var(--warn); }
+  .sec-classwork  .nb-table-wrap { background: var(--surface); }
+
+  .sec-homework   { border-left-color: var(--danger-line); background: var(--danger-soft); }
+  .sec-homework   .sec-flag-label { color: var(--danger); }
+  .sec-homework   .nb-table-wrap { background: var(--surface); }
+
+  .sec-complexity { border-left-color: var(--violet-line); background: var(--violet-soft); }
+  .sec-complexity .sec-flag-label { color: var(--violet); }
+
+  @media (max-width: 640px) {
+    .nb-tagged { padding: .9em 1em 1em; margin-left: calc(var(--gutter) * -0.5); margin-right: calc(var(--gutter) * -0.5); }
+  }
+</style>
+
+<script>
+  // Only pages that render a notebook pay for this.
+  import '../scripts/plotly-figure.ts';
+</script>
+
+<style is:global>
+  plotly-figure { display: block; min-height: 120px; }
+  .pf-status {
+    padding: 2rem 1rem; text-align: center;
+    color: var(--ink-faint); font-size: .86rem;
+  }
+  .pf-error { color: var(--warn); }
+  .pf-plot { width: 100%; min-height: 380px; }
+  @media (max-width: 640px) { .pf-plot { min-height: 300px; } }
+</style>

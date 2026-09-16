@@ -1,0 +1,86 @@
+[
+  {
+    "origjinali": "Laborator1.ipynb",
+    "publikuar": "laborator-01.ipynb",
+    "sha256": "a98e9eefc4a3a989389989236acf6a45b6e057a65c2d75f34df7b41d295c2f3a",
+    "identik": true
+  },
+  {
+    "origjinali": "Laborator2 (1).ipynb",
+    "publikuar": "laborator-02.ipynb",
+    "sha256": "c0d77c63459c67ffa82deeef7a28849fa92baa44b35c7dbd978c1f8a0477accd",
+    "identik": true
+  },
+  {
+    "origjinali": "Laborator3 (1).ipynb",
+    "publikuar": "laborator-03.ipynb",
+    "sha256": "d56d44bcba575a9f3f33e98a32698b009951ee25d67d6e375b58ca2f13bb8ec2",
+    "identik": true
+  },
+  {
+    "origjinali": "Laborator4.ipynb",
+    "publikuar": "laborator-04.ipynb",
+    "sha256": "48db0a6e1c27d463c12f31454ba098b0d1940be2abf290f6a128cd288301891a",
+    "identik": true
+  },
+  {
+    "origjinali": "Laborator5 .ipynb",
+    "publikuar": "laborator-05.ipynb",
+    "sha256": "1c57d53faf95c781849c5d16c531d2efab19a71c230f4f1799ae1a4fb5f70adf",
+    "identik": true
+  },
+  {
+    "origjinali": "Laborator7.ipynb",
+    "publikuar": "laborator-07.ipynb",
+    "sha256": "8558f3a9ea0d9c20f9c508be8e6a4019318a81e5227c0f79f006af5e107ae590",
+    "identik": true
+  },
+  {
+    "origjinali": "Laborator8.ipynb",
+    "publikuar": "laborator-08.ipynb",
+    "sha256": "27083de192530e879be2cc093553979d725a9825287aa449165049c1a0db536c",
+    "identik": true
+  },
+  {
+    "origjinali": "Laborator9.ipynb",
+    "publikuar": "laborator-09.ipynb",
+    "sha256": "dbcdc65580ea42a83231db1030895c0473ec027a514ad60ea85f3f36697ac116",
+    "identik": true
+  },
+  {
+    "origjinali": "dijkstra_animated.ipynb",
+    "publikuar": "dijkstra-animated.ipynb",
+    "sha256": "4204d37ed9887824f5523f1f5a66d1906c18e513a354e3000f233dfd6b4afb98",
+    "identik": true
+  },
+  {
+    "origjinali": "bellmanFord_animated.ipynb",
+    "publikuar": "bellman-ford-animated.ipynb",
+    "sha256": "4cd3c8e51e535b57f6cee0421535a3b4a7ed552b3959c2331174ddca59a89069",
+    "identik": true
+  },
+  {
+    "origjinali": "detyra2_algoritme.ipynb",
+    "publikuar": "detyra-lab02-algoritmet-e-renditjes.ipynb",
+    "sha256": "9b916688a496a9d70c8bebe7e81d5c290967c1fe9d822009cc693a0faafec5a6",
+    "identik": true
+  },
+  {
+    "origjinali": "Detyre_Shtepie (1).ipynb",
+    "publikuar": "detyra-lab03-analiza-e-kompleksitetit.ipynb",
+    "sha256": "15dcb9ce5989775fb982ca008698ab8a4b55736a547ab1b932f1aff9234d01be",
+    "identik": true
+  },
+  {
+    "origjinali": "Detyra_Shtepie_Laborator6_Ushtrime.ipynb",
+    "publikuar": "detyra-lab06-scc-dhe-renditje-topologjike.ipynb",
+    "sha256": "293e346a525586b133455e41a26262f72367b82b77960b3b04542de016c3ca03",
+    "identik": true
+  },
+  {
+    "origjinali": "Laborator5.ipynb",
+    "publikuar": "arkiv/laborator-05-version-i-meparshem.ipynb",
+    "sha256": "3639184b2e0b8d5a1e1ba0ec6235104df76bd90dbb9a02e3482e7a23a67c5eab",
+    "identik": true
+  }
+]

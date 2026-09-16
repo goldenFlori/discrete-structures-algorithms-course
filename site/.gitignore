@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.astro/
+
+# Gjenerohen nga `npm run content` — nuk ruhen në git.
+src/generated/
+public/nb/
+public/shkarkime/
+public/vendor/

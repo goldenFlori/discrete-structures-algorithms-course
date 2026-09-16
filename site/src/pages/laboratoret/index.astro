@@ -1,0 +1,188 @@
+---
+import Base from '../../layouts/Base.astro';
+import LabCard from '../../components/LabCard.astro';
+import data from '../../generated/course.json';
+
+const base = import.meta.env.BASE_URL;
+const labs = data.labs as any[];
+const published = labs.filter((l) => l.isPublic);
+const upcoming = labs.filter((l) => !l.isPublic);
+const topics = data.topics as any[];
+
+// Group the semester into the blocks the material actually forms.
+const blocks = [
+  { title: 'Renditje & Kompleksitet', range: [1, 3], note: 'Themeli i Big-O për gjithçka që vjen më pas.' },
+  { title: 'Grafet', range: [4, 6], note: 'Terminologjia, paraqitjet dhe përshkimi.' },
+  { title: 'Rrugët më të Shkurtra', range: [7, 8], note: 'Greedy, relaksim dhe programim dinamik.' },
+  { title: 'Rrjedha Maksimale', range: [9, 9], note: 'Kapacitete, prerje minimale dhe rrugë rritëse.' },
+].map((b) => ({ ...b, labs: published.filter((l) => l.n >= b.range[0] && l.n <= b.range[1]) }))
+ .filter((b) => b.labs.length > 0);
+
+const grouped = new Set(blocks.flatMap((b) => b.labs.map((l: any) => l.n)));
+const ungrouped = published.filter((l) => !grouped.has(l.n));
+---
+
+<Base title="Laboratorët" description="Të gjithë laboratorët e semestrit, të organizuar sipas javës dhe temës.">
+  <div class="page">
+    <header class="page-head">
+      <h1>Laboratorët</h1>
+      <p class="lede">
+        {published.length} laboratorë të publikuar. Çdo laborator mbledh në një faqe të vetme
+        materialin kryesor, materialin plotësues, punën në klasë, detyrën dhe shkarkimet.
+      </p>
+    </header>
+
+    <div class="view-switch no-print" role="group" aria-label="Mënyra e shfaqjes">
+      <button type="button" class="vs-btn is-on" data-view="tema" aria-pressed="true">Sipas temës</button>
+      <button type="button" class="vs-btn" data-view="java" aria-pressed="false">Sipas javës</button>
+    </div>
+
+    {/* --------------------------------------------------- by topic */}
+    <div id="view-tema">
+      {blocks.map((b) => (
+        <section class="block">
+          <div class="block-head">
+            <h2>{b.title}</h2>
+            <p class="muted">{b.note}</p>
+          </div>
+          <div class="grid grid-2">
+            {b.labs.map((lab: any) => <LabCard lab={lab} />)}
+          </div>
+        </section>
+      ))}
+      {ungrouped.length > 0 && (
+        <section class="block">
+          <div class="block-head"><h2>Të tjera</h2></div>
+          <div class="grid grid-2">{ungrouped.map((lab) => <LabCard lab={lab} />)}</div>
+        </section>
+      )}
+    </div>
+
+    {/* ------------------------------------------------ by week (timeline) */}
+    <div id="view-java" hidden>
+      <ol class="timeline">
+        {published.map((lab) => (
+          <li class="tl-item">
+            <div class="tl-marker" aria-hidden="true"><span>{lab.week ?? lab.n}</span></div>
+            <a class="tl-body card card-link" href={`${base}laboratoret/${lab.slug}/`}>
+              <div class="tl-top">
+                <span class="tl-lab mono">Lab {lab.slug}</span>
+                {lab.week && <span class="muted tl-week">Java {lab.week}</span>}
+              </div>
+              <strong>{lab.title}</strong>
+              {lab.summary && <p class="muted">{lab.summary}</p>}
+            </a>
+          </li>
+        ))}
+        {upcoming.map((lab) => (
+          <li class="tl-item is-future">
+            <div class="tl-marker" aria-hidden="true"><span>{lab.week ?? lab.n}</span></div>
+            <div class="tl-body card">
+              <div class="tl-top">
+                <span class="tl-lab mono">Lab {lab.slug}</span>
+                <span class="badge badge-neutral">Së shpejti</span>
+              </div>
+              <strong>{lab.title}</strong>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+
+    {upcoming.length > 0 && (
+      <section class="block">
+        <div class="block-head"><h2>Në vijim</h2></div>
+        <div class="grid grid-2">{upcoming.map((lab) => <LabCard lab={lab} compact />)}</div>
+      </section>
+    )}
+
+    {/* ------------------------------------------------------- topics */}
+    <section class="block topics-block">
+      <div class="block-head">
+        <h2>Temat e lëndës</h2>
+        <p class="muted">Të njëjtat materiale, të renditura sipas konceptit.</p>
+      </div>
+      <div class="grid grid-3">
+        {topics.map((t) => {
+          const ls = published.filter((l) => (l.topics || []).includes(t.id));
+          if (!ls.length) return null;
+          return (
+            <div class="card topic-card">
+              <h3>{t.name}</h3>
+              <div class="topic-labs">
+                {ls.map((l) => (
+                  <a class="chip" href={`${base}laboratoret/${l.slug}/`}>Lab {l.slug}</a>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .page { padding: 2rem 0 3rem; }
+  .page-head { max-width: 680px; margin-bottom: 1.5rem; }
+  .lede { color: var(--ink-2); font-size: 1.02rem; }
+
+  .view-switch { display: inline-flex; gap: .25rem; padding: .25rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; margin-bottom: 2rem; }
+  .vs-btn {
+    font: inherit; font-size: .84rem; font-weight: 550;
+    padding: .35em .95em; border: 0; border-radius: 999px;
+    background: none; color: var(--ink-3); cursor: pointer;
+  }
+  .vs-btn.is-on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+
+  .block { margin-bottom: 3rem; }
+  .block-head { margin-bottom: 1rem; }
+  .block-head h2 { margin: 0 0 .15rem; font-size: 1.1rem; }
+  .block-head p { margin: 0; font-size: .88rem; }
+
+  .timeline { list-style: none; padding: 0; margin: 0; position: relative; }
+  .timeline::before {
+    content: ''; position: absolute; left: 15px; top: 14px; bottom: 14px;
+    width: 2px; background: var(--border);
+  }
+  .tl-item { display: flex; gap: 1rem; margin: 0 0 .8rem; position: relative; }
+  .tl-marker {
+    flex: none; width: 32px; height: 32px; display: grid; place-items: center;
+    border-radius: 50%; background: var(--surface); border: 2px solid var(--accent-line);
+    font: 700 .76rem/1 var(--font-mono); color: var(--accent); z-index: 1;
+  }
+  .is-future .tl-marker { border-color: var(--border); color: var(--ink-faint); border-style: dashed; }
+  .is-future .tl-body { opacity: .68; border-style: dashed; }
+  .tl-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .25rem; }
+  .tl-top { display: flex; align-items: center; gap: .6rem; }
+  .tl-lab { font-size: .74rem; font-weight: 700; color: var(--accent); letter-spacing: .04em; }
+  .tl-week { font-size: .78rem; }
+  .tl-body strong { font-size: .98rem; font-weight: 580; }
+  .tl-body p { margin: 0; font-size: .87rem; }
+
+  .topics-block { border-top: 1px solid var(--border); padding-top: 2.5rem; }
+  .topic-card h3 { margin: 0 0 .6rem; font-size: .95rem; }
+  .topic-labs { display: flex; flex-wrap: wrap; gap: .3rem; }
+</style>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>('.vs-btn');
+  const views: Record<string, HTMLElement | null> = {
+    tema: document.getElementById('view-tema'),
+    java: document.getElementById('view-java'),
+  };
+  const apply = (v: string) => {
+    for (const [k, el] of Object.entries(views)) if (el) el.hidden = k !== v;
+    for (const b of buttons) {
+      const on = b.dataset.view === v;
+      b.classList.toggle('is-on', on);
+      b.setAttribute('aria-pressed', String(on));
+    }
+    try { localStorage.setItem('pamja-laboratoret', v); } catch {}
+  };
+  for (const b of buttons) b.addEventListener('click', () => apply(b.dataset.view!));
+  try {
+    const saved = localStorage.getItem('pamja-laboratoret');
+    if (saved && views[saved]) apply(saved);
+  } catch {}
+</script>

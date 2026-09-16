@@ -1,0 +1,158 @@
+---
+import data from '../generated/course.json';
+const { course } = data;
+const base = import.meta.env.BASE_URL;
+const path = Astro.url.pathname;
+
+const links = [
+  { href: `${base}`, label: 'Kreu', exact: true },
+  { href: `${base}laboratoret/`, label: 'Laboratorët' },
+  { href: `${base}detyrat/`, label: 'Detyrat' },
+  { href: `${base}vizualizime/`, label: 'Vizualizime' },
+  { href: `${base}python/`, label: 'Python' },
+  { href: `${base}informacion/`, label: 'Informacioni' },
+];
+
+const isActive = (l: { href: string; exact?: boolean }) =>
+  l.exact ? path === l.href : path.startsWith(l.href);
+---
+
+<header class="site-nav no-print">
+  <div class="wrap nav-inner">
+    <a class="brand" href={base}>
+      <span class="brand-mark" aria-hidden="true">SDA</span>
+      <span class="brand-text">
+        <strong>{course.title}</strong>
+        <small>{course.year} · {course.component}</small>
+      </span>
+    </a>
+
+    <nav class="nav-links" aria-label="Navigimi kryesor">
+      {links.map((l) => (
+        <a href={l.href} aria-current={isActive(l) ? 'page' : undefined}>{l.label}</a>
+      ))}
+    </nav>
+
+    <div class="nav-actions">
+      <a class="nav-icon" href={`${base}kerko/`} aria-label="Kërko në faqe" title="Kërko">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+        </svg>
+      </a>
+      {course.classroomUrl && (
+        <a class="btn btn-sm classroom" href={course.classroomUrl} target="_blank" rel="noopener noreferrer">
+          Classroom
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <path d="M14 4h6v6M20 4 10 14M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+          </svg>
+        </a>
+      )}
+      <button class="nav-icon" id="theme-toggle" type="button" aria-label="Ndërro temën e ngjyrave" title="Ndërro temën">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7Z" />
+        </svg>
+      </button>
+      <button class="nav-icon nav-burger" id="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-mobile" aria-label="Hap menunë">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <nav class="nav-mobile" id="nav-mobile" aria-label="Navigimi kryesor (celular)" hidden>
+    {links.map((l) => (
+      <a href={l.href} aria-current={isActive(l) ? 'page' : undefined}>{l.label}</a>
+    ))}
+    <a href={`${base}kerko/`}>Kërko</a>
+    {course.classroomUrl && (
+      <a href={course.classroomUrl} target="_blank" rel="noopener noreferrer">Google Classroom ↗</a>
+    )}
+  </nav>
+</header>
+
+<style>
+  .site-nav {
+    position: sticky; top: 0; z-index: 50;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: saturate(150%) blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner {
+    display: flex; align-items: center; gap: 1rem;
+    min-height: var(--nav-h);
+  }
+  .brand { display: flex; align-items: center; gap: .6rem; text-decoration: none; color: inherit; margin-right: auto; min-width: 0; }
+  .brand-mark {
+    display: grid; place-items: center;
+    width: 30px; height: 30px; flex: none;
+    border-radius: 7px;
+    background: var(--accent); color: #fff;
+    font: 700 .68rem/1 var(--font-mono); letter-spacing: .02em;
+  }
+  .brand-text { display: flex; flex-direction: column; min-width: 0; }
+  .brand-text strong { font-size: .95rem; font-weight: 640; letter-spacing: -.015em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .brand-text small { font-size: .72rem; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .nav-links { display: flex; gap: .15rem; }
+  .nav-links a {
+    font-size: .89rem; font-weight: 520; color: var(--ink-2);
+    text-decoration: none; padding: .4em .7em; border-radius: var(--radius-sm);
+    white-space: nowrap;
+  }
+  .nav-links a:hover { background: var(--surface-2); color: var(--ink); }
+  .nav-links a[aria-current='page'] { color: var(--accent-ink); background: var(--accent-soft); font-weight: 620; }
+
+  .nav-actions { display: flex; align-items: center; gap: .3rem; flex: none; }
+  .nav-icon {
+    display: grid; place-items: center;
+    width: 32px; height: 32px; flex: none;
+    border: 1px solid transparent; border-radius: var(--radius-sm);
+    background: none; color: var(--ink-2); cursor: pointer; padding: 0;
+  }
+  .nav-icon:hover { background: var(--surface-2); color: var(--ink); border-color: var(--border); }
+  .classroom { white-space: nowrap; }
+  .nav-burger { display: none; }
+
+  .nav-mobile { display: none; }
+
+  @media (max-width: 900px) {
+    .nav-links { display: none; }
+    .nav-burger { display: grid; }
+    .classroom { display: none; }
+    .nav-mobile {
+      display: flex; flex-direction: column;
+      border-top: 1px solid var(--border);
+      padding: .5rem var(--gutter) 1rem;
+      background: var(--bg);
+    }
+    .nav-mobile[hidden] { display: none; }
+    .nav-mobile a {
+      padding: .7em .4em; text-decoration: none; color: var(--ink-2);
+      border-bottom: 1px solid var(--border); font-size: .95rem;
+    }
+    .nav-mobile a[aria-current='page'] { color: var(--accent-ink); font-weight: 620; }
+  }
+</style>
+
+<script>
+  const toggle = document.getElementById('nav-toggle');
+  const menu = document.getElementById('nav-mobile');
+  toggle?.addEventListener('click', () => {
+    const open = toggle.getAttribute('aria-expanded') === 'true';
+    toggle.setAttribute('aria-expanded', String(!open));
+    toggle.setAttribute('aria-label', open ? 'Hap menunë' : 'Mbyll menunë');
+    if (menu) menu.hidden = open;
+  });
+
+  const theme = document.getElementById('theme-toggle');
+  theme?.addEventListener('click', () => {
+    const root = document.documentElement;
+    const now =
+      root.dataset.theme ||
+      (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const next = now === 'dark' ? 'light' : 'dark';
+    root.dataset.theme = next;
+    try { localStorage.setItem('tema', next); } catch {}
+  });
+</script>

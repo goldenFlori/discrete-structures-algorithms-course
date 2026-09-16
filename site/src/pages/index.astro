@@ -1,0 +1,310 @@
+---
+import Base from '../layouts/Base.astro';
+import data from '../generated/course.json';
+import notebooks from '../generated/notebooks.json';
+
+const base = import.meta.env.BASE_URL;
+const { course } = data;
+const labs = data.labs as any[];
+const published = labs.filter((l) => l.isPublic);
+const latest = published[published.length - 1];
+const previous = published[published.length - 2];
+const nbs = notebooks as Record<string, any>;
+
+const topicName = (id: string) => (data.topics as any[]).find((t) => t.id === id)?.name || id;
+const latestMain = latest?.resources.find((r: any) => r.type === 'main' && r.available);
+
+// Homework a student can still act on, newest first.
+const allHomework = [
+  ...(data.homework as any[]).map((h) => ({ kind: 'standalone' as const, lab: h.lab, title: h.title, href: `${base}detyrat/${h.id}/` })),
+  ...labs.filter((l) => l.isPublic).flatMap((l) =>
+    l.homeworkEmbedded.map((h: any) => ({ kind: 'embedded' as const, lab: l.n, title: h.title, href: `${base}laboratoret/${l.slug}/#${h.anchor}` })),
+  ),
+].sort((a, b) => b.lab - a.lab);
+
+const viz = data.visualizers as any[];
+---
+
+<Base title={course.title} description={course.description}>
+  <div class="home">
+    {/* ------------------------------------------------------ intro */}
+    <header class="hero">
+      <p class="hero-eyebrow">
+        {course.program} · {course.year}
+        {course.faculty && <> · {course.faculty}</>}
+      </p>
+      <h1>{course.title}</h1>
+      <p class="hero-lede">{course.description}</p>
+      <div class="hero-actions no-print">
+        <a class="btn btn-primary" href={`${base}laboratoret/`}>Të gjithë laboratorët</a>
+        <a class="btn" href={`${base}python/`}>Përgatit mjedisin Python</a>
+        {course.classroomUrl && (
+          <a class="btn" href={course.classroomUrl} target="_blank" rel="noopener noreferrer">Google Classroom ↗</a>
+        )}
+      </div>
+    </header>
+
+    {/* ---------------------------------------------- current lab */}
+    {latest && (
+      <section class="current" aria-labelledby="current-title">
+        <div class="current-flag">
+          <span class="pulse" aria-hidden="true"></span>
+          <span id="current-title">Laboratori aktual</span>
+        </div>
+        <div class="current-card">
+          <div class="current-main">
+            <div class="current-top">
+              <span class="current-n">Laboratori {latest.slug}</span>
+              {latest.week && <span class="muted">Java {latest.week}</span>}
+            </div>
+            <h2>{latest.title}</h2>
+            {latest.summary && <p class="current-summary">{latest.summary}</p>}
+            <div class="current-chips">
+              {(latest.topics || []).map((t: string) => <span class="chip">{topicName(t)}</span>)}
+            </div>
+            <div class="current-actions no-print">
+              <a class="btn btn-primary" href={`${base}laboratoret/${latest.slug}/`}>Hap laboratorin</a>
+              {latestMain && (
+                <a class="btn" href={`${base}shkarkime/${latestMain.notebook}`} download>Shkarko fletoren</a>
+              )}
+            </div>
+          </div>
+          <dl class="current-facts">
+            {latestMain && (
+              <div>
+                <dt>Materiali</dt>
+                <dd>{nbs[latestMain.notebook].stats.code} qeliza kodi, {nbs[latestMain.notebook].stats.markdown} seksione teorie</dd>
+              </div>
+            )}
+            {latest.dependencies.length > 0 && (
+              <div>
+                <dt>Ju duhet</dt>
+                <dd class="mono">{latest.dependencies.join(' · ')}</dd>
+              </div>
+            )}
+            <div>
+              <dt>Detyrë shtëpie</dt>
+              <dd>
+                {latest.homeworkEmbedded.length > 0
+                  ? <a href={`${base}laboratoret/${latest.slug}/#detyra`}>Po — brenda fletores</a>
+                  : latest.homeworkStandalone.length > 0
+                    ? <a href={`${base}detyrat/`}>Po — fletore më vete</a>
+                    : 'Jo për këtë laborator'}
+              </dd>
+            </div>
+            {(latest.visualizers || []).length > 0 && (
+              <div>
+                <dt>Vizualizim</dt>
+                <dd><a href={`${base}laboratoret/${latest.slug}/#vizualizime`}>Po — {latest.visualizers.length} interaktivë</a></dd>
+              </div>
+            )}
+          </dl>
+        </div>
+        {previous && (
+          <p class="current-prev">
+            Javën e kaluar: <a href={`${base}laboratoret/${previous.slug}/`}>Laboratori {previous.slug} — {previous.title}</a>
+          </p>
+        )}
+      </section>
+    )}
+
+    {/* ------------------------------------------------- shortcuts */}
+    <section class="shortcuts" aria-label="Shkurtore">
+      <a class="sc card card-link" href={`${base}laboratoret/`}>
+        <span class="sc-n mono">{published.length}</span>
+        <strong>Laboratorë</strong>
+        <small>Materiali kryesor, plotësues, punë në klasë dhe shkarkime — të gjitha bashkë.</small>
+      </a>
+      <a class="sc card card-link" href={`${base}detyrat/`}>
+        <span class="sc-n mono">{allHomework.length}</span>
+        <strong>Detyra Shtëpie</strong>
+        <small>I gjithë semestri në një listë, pa kërkuar nëpër postime të vjetra.</small>
+      </a>
+      <a class="sc card card-link" href={`${base}vizualizime/`}>
+        <span class="sc-n mono">{viz.length}</span>
+        <strong>Vizualizime</strong>
+        <small>Algoritmet e lëndës, hap pas hapi, drejtpërdrejt në shfletues.</small>
+      </a>
+      <a class="sc card card-link" href={`${base}python/`}>
+        <span class="sc-n mono" aria-hidden="true">Py</span>
+        <strong>Python &amp; Setup</strong>
+        <small>Çfarë të instaloni, si t'i hapni fletoret, dhe gabimet e zakonshme.</small>
+      </a>
+    </section>
+
+    {/* ---------------------------------------------------- timeline */}
+    <section class="section">
+      <div class="section-head">
+        <h2>Rrjedha e semestrit</h2>
+        <a class="section-more no-print" href={`${base}laboratoret/`}>Të gjithë →</a>
+      </div>
+      <ol class="mini-timeline">
+        {published.map((l) => (
+          <li>
+            <a href={`${base}laboratoret/${l.slug}/`} class={l.n === latest?.n ? 'is-current' : ''}>
+              <span class="mt-n mono">{l.slug}</span>
+              <span class="mt-title">{l.title}</span>
+              {l.n === latest?.n && <span class="badge badge-accent">Aktual</span>}
+            </a>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    {/* ---------------------------------------------------- homework */}
+    {allHomework.length > 0 && (
+      <section class="section">
+        <div class="section-head">
+          <h2>Detyrat e shtëpisë</h2>
+          <a class="section-more no-print" href={`${base}detyrat/`}>Të gjitha →</a>
+        </div>
+        <ul class="hw-mini">
+          {allHomework.slice(0, 4).map((h) => (
+            <li>
+              <a href={h.href}>
+                <span class="hw-lab mono">Lab {String(h.lab).padStart(2, '0')}</span>
+                <span class="hw-title">{h.title}</span>
+                <span class={`badge ${h.kind === 'embedded' ? 'badge-danger' : 'badge-accent'}`}>
+                  {h.kind === 'embedded' ? 'Brenda labit' : 'Fletore më vete'}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+        {course.classroomUrl && (
+          <p class="muted" style="font-size:.88rem;margin-top:.8rem">
+            Dorëzimi dhe njoftimet mbeten në
+            <a href={course.classroomUrl} target="_blank" rel="noopener noreferrer"> Google Classroom</a>.
+          </p>
+        )}
+      </section>
+    )}
+
+    {/* -------------------------------------------------- visualizers */}
+    <section class="section no-print">
+      <div class="section-head">
+        <h2>Vizualizime interaktive</h2>
+        <a class="section-more" href={`${base}vizualizime/`}>Të gjitha →</a>
+      </div>
+      <div class="grid grid-2">
+        {viz.slice(0, 4).map((v) => (
+          <a class="card card-link viz" href={`${base}vizualizime/${v.id}/`}>
+            <strong>{v.title}</strong>
+            <span class="viz-tag mono">{v.tagline}</span>
+            <small class="muted">{v.summary}</small>
+            <span class="viz-labs">
+              {v.labs.map((n: number) => <span class="chip">Lab {String(n).padStart(2, '0')}</span>)}
+            </span>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    {/* ------------------------------------------------------ topics */}
+    <section class="section">
+      <div class="section-head"><h2>Temat kryesore</h2></div>
+      <div class="topic-row">
+        {(data.topics as any[]).map((t) => {
+          const ls = published.filter((l) => (l.topics || []).includes(t.id));
+          if (!ls.length) return null;
+          return (
+            <div class="topic-pill">
+              <strong>{t.name}</strong>
+              <span>{ls.map((l) => <a class="chip" href={`${base}laboratoret/${l.slug}/`}>{l.slug}</a>)}</span>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .home { padding: 2.5rem 0 3rem; }
+
+  .hero { max-width: 720px; margin-bottom: 3rem; }
+  .hero-eyebrow { font-size: .84rem; color: var(--ink-3); margin-bottom: .5rem; letter-spacing: .01em; }
+  .hero h1 { margin-bottom: .4em; }
+  .hero-lede { font-size: 1.08rem; color: var(--ink-2); line-height: 1.65; }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.5rem; }
+
+  /* ---- current lab ---- */
+  .current { margin-bottom: 3rem; }
+  .current-flag {
+    display: inline-flex; align-items: center; gap: .5rem;
+    font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: .7rem;
+  }
+  .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 0 var(--accent-line); animation: pulse 2.4s infinite; }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 7px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+  @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+
+  .current-card {
+    display: grid; gap: 1.5rem;
+    border: 1px solid var(--accent-line); border-radius: var(--radius);
+    background: var(--surface); overflow: hidden;
+  }
+  @media (min-width: 860px) { .current-card { grid-template-columns: minmax(0, 1.6fr) minmax(220px, 1fr); gap: 0; } }
+  .current-main { padding: 1.5rem 1.6rem; }
+  .current-top { display: flex; align-items: baseline; gap: .7rem; font-size: .84rem; margin-bottom: .3rem; }
+  .current-n { font-family: var(--font-mono); font-weight: 700; color: var(--accent); }
+  .current-card h2 { margin: 0 0 .5rem; font-size: 1.4rem; }
+  .current-summary { color: var(--ink-2); font-size: .95rem; margin-bottom: .9rem; }
+  .current-chips { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: 1.2rem; }
+  .current-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+
+  .current-facts { margin: 0; padding: 1.5rem 1.6rem; background: var(--accent-soft); border-top: 1px solid var(--accent-line); display: grid; gap: .9rem; align-content: start; }
+  @media (min-width: 860px) { .current-facts { border-top: 0; border-left: 1px solid var(--accent-line); } }
+  .current-facts dt { font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: .15rem; }
+  .current-facts dd { margin: 0; font-size: .88rem; color: var(--ink-2); }
+  .current-facts .mono { font-size: .8rem; }
+  .current-prev { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
+
+  /* ---- shortcuts ---- */
+  .shortcuts { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin-bottom: 3.5rem; }
+  .sc { display: flex; flex-direction: column; gap: .2rem; }
+  .sc-n { font-size: 1.6rem; font-weight: 700; color: var(--accent); line-height: 1.1; }
+  .sc strong { font-size: .98rem; }
+  .sc small { color: var(--ink-3); font-size: .84rem; line-height: 1.5; }
+
+  /* ---- sections ---- */
+  .section { margin-bottom: 3.5rem; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; padding-bottom: .5rem; border-bottom: 1px solid var(--border); }
+  .section-head h2 { margin: 0; font-size: 1.1rem; }
+  .section-more { font-size: .85rem; text-decoration: none; white-space: nowrap; }
+
+  .mini-timeline { list-style: none; padding: 0; margin: 0; display: grid; gap: .3rem; }
+  .mini-timeline li { margin: 0; }
+  .mini-timeline a {
+    display: flex; align-items: center; gap: .8rem; padding: .5rem .7rem;
+    border-radius: var(--radius-sm); text-decoration: none; color: inherit;
+    border: 1px solid transparent;
+  }
+  .mini-timeline a:hover { background: var(--surface-2); border-color: var(--border); }
+  .mini-timeline a.is-current { background: var(--accent-soft); border-color: var(--accent-line); }
+  .mt-n { flex: none; font-size: .78rem; font-weight: 700; color: var(--accent); width: 2ch; }
+  .mt-title { font-size: .92rem; }
+
+  .hw-mini { list-style: none; padding: 0; margin: 0; display: grid; gap: .4rem; }
+  .hw-mini li { margin: 0; }
+  .hw-mini a {
+    display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
+    padding: .6rem .8rem; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    text-decoration: none; color: inherit; background: var(--surface);
+  }
+  .hw-mini a:hover { border-color: var(--accent-line); background: var(--accent-soft); }
+  .hw-lab { flex: none; font-size: .76rem; font-weight: 700; color: var(--accent); }
+  .hw-title { font-size: .9rem; flex: 1; min-width: 150px; }
+
+  .viz { display: flex; flex-direction: column; gap: .35rem; }
+  .viz strong { font-size: 1rem; }
+  .viz-tag { font-size: .76rem; color: var(--accent); }
+  .viz small { font-size: .86rem; line-height: 1.5; }
+  .viz-labs { display: flex; gap: .3rem; margin-top: .3rem; }
+
+  .topic-row { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  .topic-pill { display: flex; align-items: center; justify-content: space-between; gap: .8rem; padding: .55rem .8rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); }
+  .topic-pill strong { font-size: .88rem; font-weight: 550; }
+  .topic-pill span { display: flex; gap: .25rem; }
+  .topic-pill .chip { font-size: .72rem; padding: .1em .5em; }
+</style>

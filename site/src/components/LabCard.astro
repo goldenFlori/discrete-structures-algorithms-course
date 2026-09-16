@@ -1,0 +1,109 @@
+---
+/**
+ * A laboratory as a student sees it: number, title, topics, status and what
+ * resources are inside — never a bare filename.
+ */
+import data from '../generated/course.json';
+
+interface Props { lab: any; compact?: boolean }
+const { lab, compact = false } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const topicName = (id: string) => data.topics.find((t: any) => t.id === id)?.name || id;
+
+const STATUS: Record<string, { label: string; cls: string }> = {
+  published: { label: 'I publikuar', cls: 'badge-ok' },
+  updated: { label: 'I përditësuar', cls: 'badge-accent' },
+  draft: { label: 'Draft', cls: 'badge-neutral' },
+  'coming-soon': { label: 'Së shpejti', cls: 'badge-neutral' },
+};
+const status = STATUS[lab.status] ?? STATUS.draft;
+const open = lab.isPublic;
+
+// What is actually inside, described rather than listed as files.
+const bits: string[] = [];
+const main = lab.resources.filter((r: any) => r.type === 'main' && r.available).length;
+const supp = lab.resources.filter((r: any) => r.type === 'supplementary' && r.available).length;
+if (main) bits.push(main === 1 ? 'Materiali kryesor' : `${main} materiale kryesore`);
+if (supp) bits.push(supp === 1 ? '1 material plotësues' : `${supp} materiale plotësuese`);
+const hwCount = lab.homeworkEmbedded.length + lab.homeworkStandalone.filter((h: any) => h.primary).length;
+if (hwCount) bits.push(hwCount === 1 ? 'Detyrë shtëpie' : `${hwCount} detyra shtëpie`);
+if (lab.resources.some((r: any) => r.notebookMeta?.hasClasswork)) bits.push('Punë në klasë');
+const vizCount = (lab.visualizers || []).length;
+if (vizCount) bits.push(vizCount === 1 ? '1 vizualizues' : `${vizCount} vizualizues`);
+
+const Tag = open ? 'a' : 'div';
+---
+
+<Tag
+  class={`lab-card ${open ? 'card card-link' : 'card is-locked'} ${compact ? 'is-compact' : ''}`}
+  href={open ? `${base}laboratoret/${lab.slug}/` : undefined}
+>
+  <div class="lab-top">
+    <span class="lab-n">
+      <span class="lab-n-label">Lab</span>
+      <span class="lab-n-val">{String(lab.n).padStart(2, '0')}</span>
+    </span>
+    <span class={`badge ${status.cls}`}>{status.label}</span>
+  </div>
+
+  <h3 class="lab-title">{lab.title}</h3>
+
+  {!compact && lab.summary && <p class="lab-summary">{lab.summary}</p>}
+
+  {lab.topics?.length > 0 && (
+    <div class="lab-topics">
+      {lab.topics.map((t: string) => <span class="chip">{topicName(t)}</span>)}
+    </div>
+  )}
+
+  {open && bits.length > 0 && (
+    <ul class="lab-bits">
+      {bits.map((b) => <li>{b}</li>)}
+    </ul>
+  )}
+
+  {open && (
+    <span class="lab-cta">
+      Hap laboratorin
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+        <path d="m9 6 6 6-6 6" />
+      </svg>
+    </span>
+  )}
+  {!open && <span class="lab-cta muted">Ende i papublikuar</span>}
+</Tag>
+
+<style>
+  .lab-card { display: flex; flex-direction: column; gap: .6rem; }
+  .is-locked { opacity: .68; border-style: dashed; }
+
+  .lab-top { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+  .lab-n { display: inline-flex; align-items: baseline; gap: .35rem; font-family: var(--font-mono); }
+  .lab-n-label { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
+  .lab-n-val { font-size: 1.35rem; font-weight: 700; color: var(--accent); letter-spacing: -.02em; }
+
+  .lab-title { margin: 0; font-size: 1.05rem; line-height: 1.35; }
+  .lab-summary { margin: 0; font-size: .9rem; color: var(--ink-3); line-height: 1.55; }
+
+  .lab-topics { display: flex; flex-wrap: wrap; gap: .3rem; }
+  .lab-topics .chip { font-size: .72rem; }
+
+  .lab-bits {
+    list-style: none; padding: 0; margin: .1rem 0 0;
+    display: flex; flex-wrap: wrap; gap: .2rem .9rem;
+    font-size: .8rem; color: var(--ink-3);
+  }
+  .lab-bits li { position: relative; padding-left: .85em; margin: 0; }
+  .lab-bits li::before {
+    content: ''; position: absolute; left: 0; top: .62em;
+    width: 4px; height: 4px; border-radius: 50%; background: var(--border-strong);
+  }
+
+  .lab-cta {
+    margin-top: auto; padding-top: .5rem;
+    display: inline-flex; align-items: center; gap: .3rem;
+    font-size: .85rem; font-weight: 580; color: var(--accent);
+  }
+  .card-link:hover .lab-cta { color: var(--accent-ink); }
+  .is-compact .lab-title { font-size: .98rem; }
+</style>

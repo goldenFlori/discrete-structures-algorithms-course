@@ -1,0 +1,181 @@
+---
+import Base from '../layouts/Base.astro';
+import data from '../generated/course.json';
+
+const base = import.meta.env.BASE_URL;
+const { course } = data;
+const labs = (data.labs as any[]).filter((l) => l.isPublic);
+const topics = data.topics as any[];
+
+// Only render facts that exist. Unknown values stay hidden rather than invented.
+const facts = [
+  ['Lënda', course.title],
+  ['Programi', course.program],
+  ['Viti', course.year],
+  ['Komponenti', course.component],
+  ['Fakulteti', course.faculty],
+  ['Universiteti', course.university],
+  ['Pedagogu', course.lecturer],
+  ['Semestri', course.semester],
+  ['Orari', course.schedule],
+].filter(([, v]) => v);
+
+const totalCodeLines = labs.reduce(
+  (sum, l) => sum + l.resources.reduce((s: number, r: any) => s + (r.notebookMeta?.stats.codeLines ?? 0), 0),
+  0,
+);
+---
+
+<Base title="Informacioni i Lëndës" description={course.description}>
+  <div class="page">
+    <header class="page-head">
+      <h1>Informacioni i Lëndës</h1>
+      <p class="lede">{course.description}</p>
+    </header>
+
+    <section class="sec">
+      <h2>Të dhënat</h2>
+      <dl class="facts">
+        {facts.map(([k, v]) => (
+          <div><dt>{k}</dt><dd>{v}</dd></div>
+        ))}
+      </dl>
+      {(!course.university || !course.lecturer || !course.schedule) && (
+        <p class="callout callout-info" style="font-size:.88rem">
+          Disa të dhëna (universiteti, pedagogu, orari) nuk janë publikuar ende.
+          Ato plotësohen në një skedar të vetëm konfigurimi dhe shfaqen automatikisht këtu.
+        </p>
+      )}
+    </section>
+
+    <section class="sec">
+      <h2>Programi i laboratorëve</h2>
+      <p class="muted">
+        Titujt dhe temat janë marrë drejtpërdrejt nga fletoret — asgjë nuk është shtuar.
+      </p>
+      <ol class="syllabus">
+        {labs.map((l) => (
+          <li>
+            <a href={`${base}laboratoret/${l.slug}/`}>
+              <span class="sy-n mono">{l.slug}</span>
+              <span class="sy-body">
+                <strong>{l.title}</strong>
+                {l.summary && <small>{l.summary}</small>}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="sec">
+      <h2>Temat kryesore</h2>
+      <div class="grid grid-3">
+        {topics.map((t) => {
+          const ls = labs.filter((l) => (l.topics || []).includes(t.id));
+          if (!ls.length) return null;
+          return (
+            <div class="card">
+              <h3>{t.name}</h3>
+              <div class="chips">
+                {ls.map((l) => <a class="chip" href={`${base}laboratoret/${l.slug}/`}>Lab {l.slug}</a>)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+
+    <section class="sec">
+      <h2>Kjo faqe dhe Google Classroom</h2>
+      <div class="split">
+        <div class="card">
+          <h3>Këtu, në këtë faqe</h3>
+          <ul>
+            <li>Materialet e laboratorëve dhe teoria</li>
+            <li>Kodi Python dhe rezultatet e ruajtura</li>
+            <li>Vizualizimet interaktive të algoritmeve</li>
+            <li>Udhëzimet e detyrave dhe fletoret për shkarkim</li>
+            <li>Dokumentimi i mjedisit Python</li>
+            <li>Kërkimi në të gjithë materialin e semestrit</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Në Google Classroom</h3>
+          <ul>
+            <li>Njoftimet</li>
+            <li>Dorëzimi i detyrave</li>
+            <li>Afatet</li>
+            <li>Notat</li>
+            <li>Komunikimi me pedagogun</li>
+          </ul>
+          {course.classroomUrl ? (
+            <a class="btn btn-primary" href={course.classroomUrl} target="_blank" rel="noopener noreferrer">
+              Hap Google Classroom ↗
+            </a>
+          ) : (
+            <p class="muted" style="font-size:.86rem;margin-bottom:0">
+              Linku i klasës nuk është konfiguruar ende.
+            </p>
+          )}
+        </div>
+      </div>
+      <p class="muted" style="margin-top:1rem;font-size:.88rem">
+        Kjo faqe nuk kërkon llogari, nuk mbledh të dhëna dhe nuk ruan asgjë për ju.
+        Vizualizimet ekzekutohen tërësisht brenda shfletuesit tuaj.
+      </p>
+    </section>
+
+    <section class="sec">
+      <h2>Materiali në shifra</h2>
+      <dl class="stats">
+        <div><dt>Laboratorë të publikuar</dt><dd>{labs.length}</dd></div>
+        <div><dt>Detyra shtëpie</dt><dd>{(data.homework as any[]).length + labs.reduce((s, l) => s + l.homeworkEmbedded.length, 0)}</dd></div>
+        <div><dt>Vizualizues interaktivë</dt><dd>{(data.visualizers as any[]).length}</dd></div>
+        <div><dt>Rreshta kodi Python</dt><dd>{totalCodeLines.toLocaleString('sq-AL')}</dd></div>
+      </dl>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .page { padding: 2rem 0 3rem; max-width: 900px; }
+  .page-head { max-width: 720px; margin-bottom: 1rem; }
+  .lede { color: var(--ink-2); font-size: 1.02rem; }
+
+  .sec { margin-top: 3rem; }
+  .sec > h2 { font-size: 1.15rem; margin: 0 0 .9rem; padding-bottom: .5rem; border-bottom: 1px solid var(--border); }
+
+  .facts {
+    display: grid; gap: 1rem 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    margin: 0;
+  }
+  .facts dt { font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: .2rem; }
+  .facts dd { margin: 0; font-size: .95rem; color: var(--ink); }
+
+  .syllabus { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: .35rem; }
+  .syllabus li { margin: 0; }
+  .syllabus a {
+    display: flex; gap: .9rem; padding: .6rem .8rem;
+    text-decoration: none; color: inherit;
+    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
+  }
+  .syllabus a:hover { border-color: var(--accent-line); background: var(--accent-soft); }
+  .sy-n { flex: none; font-weight: 700; color: var(--accent); font-size: .85rem; padding-top: .1rem; }
+  .sy-body { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+  .sy-body strong { font-size: .94rem; font-weight: 580; }
+  .sy-body small { color: var(--ink-3); font-size: .84rem; line-height: 1.5; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: .3rem; }
+  .card h3 { margin: 0 0 .6rem; font-size: .98rem; }
+  .card ul { margin: 0 0 1rem; padding-left: 1.2em; font-size: .9rem; }
+  .card li { margin: .3em 0; }
+
+  .split { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+
+  .stats { display: grid; gap: .6rem; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin: 0; }
+  .stats > div { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: .8rem 1rem; background: var(--surface); }
+  .stats dt { font-size: .68rem; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-faint); }
+  .stats dd { margin: .2rem 0 0; font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+</style>
