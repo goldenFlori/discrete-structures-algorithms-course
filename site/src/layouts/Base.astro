@@ -1,0 +1,81 @@
+---
+import '../styles/global.css';
+import 'katex/dist/katex.min.css';
+import data from '../generated/course.json';
+import Nav from '../components/Nav.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Pagefind indexes only pages that opt in. */
+  indexable?: boolean;
+  wide?: boolean;
+}
+
+const { title, description, indexable = true, wide = false } = Astro.props;
+const { course } = data;
+const base = import.meta.env.BASE_URL;
+const fullTitle = title === course.title ? title : `${title} · ${course.title}`;
+const desc = description || course.description;
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang="sq" data-base={base}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={desc} />
+    <meta name="color-scheme" content="light dark" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={desc} />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
+    <script is:inline>
+      // Applied before paint so the theme never flashes.
+      try {
+        const t = localStorage.getItem('tema');
+        if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Kalo te përmbajtja</a>
+    <Nav />
+    <main id="main" class={wide ? 'wrap' : 'wrap'} data-pagefind-body={indexable ? '' : undefined}>
+      <slot />
+    </main>
+
+    <footer class="site-footer no-print">
+      <div class="wrap footer-grid">
+        <div>
+          <strong style="color:var(--ink-2)">{course.title}</strong>
+          <div>{course.program} · {course.year}</div>
+          {course.faculty && <div>{course.faculty}</div>}
+        </div>
+        <nav aria-label="Lidhje në fund të faqes">
+          <a href={`${base}laboratoret/`}>Laboratorët</a>
+          <a href={`${base}detyrat/`}>Detyrat</a>
+          <a href={`${base}vizualizime/`}>Vizualizime</a>
+          <a href={`${base}python/`}>Python &amp; Setup</a>
+          <a href={`${base}informacion/`}>Informacioni i Lëndës</a>
+        </nav>
+        <div class="footer-meta">
+          <div>© {year}</div>
+          <div>Materialet janë burim akademik i pedagogut të lëndës.</div>
+        </div>
+      </div>
+    </footer>
+
+    <style>
+      .footer-grid {
+        display: grid;
+        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      }
+      .footer-grid nav { display: flex; flex-direction: column; gap: .3rem; }
+      .footer-meta { color: var(--ink-faint); }
+    </style>
+  </body>
+</html>

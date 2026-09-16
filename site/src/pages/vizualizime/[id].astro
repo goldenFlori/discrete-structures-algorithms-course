@@ -1,0 +1,226 @@
+---
+import Base from '../../layouts/Base.astro';
+import data from '../../generated/course.json';
+import '../../styles/viz.css';
+
+export function getStaticPaths() {
+  return (data.visualizers as any[]).map((v) => ({ params: { id: v.id }, props: { viz: v } }));
+}
+
+const { viz } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const relatedLabs = (data.labs as any[]).filter((l) => l.isPublic && viz.labs.includes(l.n));
+const others = (data.visualizers as any[]).filter((v) => v.id !== viz.id);
+
+/**
+ * Teaching notes are written per visualizer: what to try, and what the
+ * notebooks say about it. They point back at the laboratory, never replace it.
+ */
+const GUIDE: Record<string, { try: string[]; watch: string[]; source: string }> = {
+  kompleksiteti: {
+    try: [
+      'Zgjidhni O(n log n) dhe O(n²), pastaj lëvizni n nga 10 te 256.',
+      'Shtoni O(2ⁿ) dhe shikoni sa shpejt del jashtë grafikut.',
+      'Fikni boshtin logaritmik për të parë sa e sheshtë duket O(n log n) përballë O(n²).',
+    ],
+    watch: [
+      'Për n të vogla kurbat janë pranë njëra-tjetrës — kjo është rregulla e n₀ e Laboratorit 2.',
+      'Pas pikës së kryqëzimit diferenca bëhet dramatike; pikërisht atje kompleksiteti fillon të ketë rëndësi.',
+    ],
+    source: 'Tabela e klasave dhe vlerat referencë janë ato të Laboratorëve 2 dhe 3.',
+  },
+  renditja: {
+    try: [
+      'Ekzekutoni Insertion Sort mbi një listë "E renditur", pastaj mbi "E anasjelltë".',
+      'Ekzekutoni Selection Sort mbi të tria shembujt — numëroni krahasimet çdo herë.',
+      'Krahasoni numrin final të krahasimeve me n(n−1)/2 dhe me n·log₂n.',
+    ],
+    watch: [
+      'Selection Sort bën gjithmonë saktësisht n(n−1)/2 krahasime — pavarësisht rendit fillestar.',
+      'Insertion Sort kalon nga O(n) te O(n²) vetëm duke ndryshuar rendin e inputit.',
+      'Merge Sort mbetet pothuajse i pandryshuar në të tria rastet.',
+    ],
+    source: 'Metrika është numri i krahasimeve, ashtu si e përcakton Laboratori 3.',
+  },
+  grafet: {
+    try: [
+      'Ndërtoni grafin K₄ dhe numëroni brinjët — a përputhet me n(n−1)/2?',
+      'Ekzekutoni BFS dhe DFS nga i njëjti kulm dhe krahasoni rendin e zbulimit.',
+      'Kaloni te grafi me peshë dhe ekzekutoni Kruskalin, pastaj Primin — a del e njëjta peshë totale?',
+    ],
+    watch: [
+      'Radha e BFS-së zgjerohet në gjerësi; stiva e DFS-së zhytet në thellësi.',
+      'Kruskali refuzon pikërisht brinjët që do të formonin cikël — shënohen me ✕.',
+      'Lista dhe matrica e fqinjësisë përditësohen ndërsa ndërtoni: O(|V|+|E|) kundrejt O(|V|²).',
+    ],
+    source: 'Grafet e paracaktuara janë ato të Punës në Klasë të Laboratorit 5.',
+  },
+  rruget: {
+    try: [
+      'Ekzekutoni të dy algoritmet me peshat fillestare — rezultati duhet të jetë i njëjtë.',
+      'Shtypni "Bëj C→E negative" dhe ekzekutoni përsëri.',
+      'Shtoni një cikël negativ dhe shikoni se cili nga të dy e zbulon.',
+    ],
+    watch: [
+      'Dijkstra e tabelon një kulm përgjithmonë sapo e zgjedh — ai vendim nuk rishikohet kurrë.',
+      'Bellman-Ford skanon të gjitha brinjët në çdo iterim, prandaj një peshë negative e arrin gjithsesi.',
+      'Numëroni relaksimet: O((V+E)log V) kundrejt O(V·E) nuk është vetëm teori.',
+    ],
+    source: 'Zëvendëson në shfletues fletoret `dijkstra_animated` dhe `bellmanFord_animated`, të cilat kërkojnë një skript Pygame që nuk është publikuar.',
+  },
+  'floyd-warshall': {
+    try: [
+      'Shtypni "Kapërce te përmirësimi tjetër" për të parë vetëm hapat ku matrica ndryshon.',
+      'Ndiqni një k të vetëm nga fillimi në fund me "Kapërce te k-ja tjetër".',
+      'Pas përfundimit, zgjidhni një çift (nga → deri te) dhe shihni rrugën e rindërtuar nga matrica P.',
+    ],
+    watch: [
+      'Rreshti dhe kolona k nuk ndryshojnë kurrë gjatë iterimit të vet.',
+      'Përmirësimi ndodh vetëm kur D[i][k] + D[k][j] < D[i][j] — të dy termat theksohen.',
+      'Pse duhet provuar çdo kulm si ndërmjetës, jo vetëm fqinjët? Vëzhgoni sa vonë vijnë disa përmirësime.',
+    ],
+    source: 'Matrica fillestare është D⁰ e Problemit 3, Punë në Klasë, Laboratori 7.',
+  },
+};
+const guide = GUIDE[viz.id];
+
+const TAG: Record<string, string> = {
+  kompleksiteti: 'viz-complexity',
+  renditja: 'viz-sorting',
+  grafet: 'viz-graph',
+  rruget: 'viz-paths',
+  'floyd-warshall': 'viz-floyd',
+};
+const tag = TAG[viz.id];
+---
+
+<Base title={viz.title} description={viz.summary}>
+  <article class="vz">
+    <header class="vz-head">
+      <nav class="crumbs no-print" aria-label="Rruga">
+        <a href={`${base}vizualizime/`}>Vizualizime</a>
+        <span aria-hidden="true">/</span>
+        <span>{viz.title}</span>
+      </nav>
+      <span class="badge badge-accent">Interaktiv</span>
+      <h1>{viz.title}</h1>
+      <p class="vz-tagline mono">{viz.tagline}</p>
+      <p class="vz-lede">{viz.summary}</p>
+      <div class="vz-labs">
+        <span class="muted">Lidhet me:</span>
+        {relatedLabs.map((l) => (
+          <a class="chip" href={`${base}laboratoret/${l.slug}/`}>Laboratori {l.slug} — {l.title}</a>
+        ))}
+      </div>
+    </header>
+
+    {viz.mobile === 'limited' && (
+      <p class="callout callout-warn no-print" style="max-width:820px">
+        <strong>Ekran i vogël:</strong> kjo vegël ka hapësirë të kufizuar në telefon.
+        Kontrollet dhe ecja hap-pas-hapi funksionojnë, por për ndërtim grafesh dhe
+        për të parë matricat pa rrëshqitje, përdorni një ekran më të gjerë.
+      </p>
+    )}
+
+    <section class="vz-stage-wrap no-print" aria-label={`Vegla interaktive: ${viz.title}`}>
+      <Fragment set:html={`<${tag}></${tag}>`} />
+      <noscript>
+        <div class="callout callout-warn">
+          <p class="callout-title">Kërkon JavaScript</p>
+          <p style="margin:0">
+            Kjo vegël ekzekutohet plotësisht brenda shfletuesit tuaj — asgjë nuk dërgohet në asnjë server.
+            Aktivizoni JavaScript, ose shkarkoni fletoren e laboratorit përkatës.
+          </p>
+        </div>
+      </noscript>
+    </section>
+
+    {guide && (
+      <section class="vz-guide">
+        <div class="vz-guide-col">
+          <h2>Provoni këtë</h2>
+          <ol>{guide.try.map((x: string) => <li>{x}</li>)}</ol>
+        </div>
+        <div class="vz-guide-col">
+          <h2>Çfarë të vëzhgoni</h2>
+          <ul>{guide.watch.map((x: string) => <li>{x}</li>)}</ul>
+        </div>
+        <div class="vz-guide-col vz-source">
+          <h2>Burimi</h2>
+          <p>{guide.source}</p>
+          <p class="muted">
+            Vegla nuk e zëvendëson laboratorin — e bën të dukshme atë që fletorja shpjegon.
+          </p>
+          {relatedLabs[0] && (
+            <a class="btn btn-sm" href={`${base}laboratoret/${relatedLabs[0].slug}/`}>
+              Hap Laboratorin {relatedLabs[0].slug}
+            </a>
+          )}
+        </div>
+      </section>
+    )}
+
+    <section class="vz-more no-print">
+      <h2 class="section-rule">Vizualizues të tjerë</h2>
+      <div class="grid grid-2">
+        {others.map((v) => (
+          <a class="card card-link" href={`${base}vizualizime/${v.id}/`}>
+            <strong>{v.title}</strong>
+            <p class="mono" style="font-size:.76rem;color:var(--accent);margin:.2rem 0">{v.tagline}</p>
+            <p class="muted" style="font-size:.86rem;margin:0">{v.summary}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+  </article>
+</Base>
+
+<script>
+  // Each visualizer ships only on its own page.
+  const tag = document.querySelector('.vz-stage-wrap > *')?.tagName.toLowerCase();
+  switch (tag) {
+    case 'viz-complexity': await import('../../scripts/viz/complexity.ts'); break;
+    case 'viz-sorting': await import('../../scripts/viz/sorting.ts'); break;
+    case 'viz-graph': await import('../../scripts/viz/graph.ts'); break;
+    case 'viz-paths': await import('../../scripts/viz/paths.ts'); break;
+    case 'viz-floyd': await import('../../scripts/viz/floyd.ts'); break;
+  }
+</script>
+
+<style>
+  .vz { padding: 1.5rem 0 3rem; }
+  .crumbs { display: flex; gap: .5rem; font-size: .84rem; color: var(--ink-faint); margin-bottom: 1rem; }
+  .crumbs a { color: var(--ink-3); text-decoration: none; }
+  .crumbs a:hover { color: var(--accent); }
+
+  .vz-head { max-width: 780px; margin-bottom: 1.8rem; }
+  .vz-head h1 { margin: .5rem 0 .3rem; }
+  .vz-tagline { font-size: .9rem; color: var(--accent); margin: 0 0 .8rem; }
+  .vz-lede { font-size: 1.02rem; color: var(--ink-2); }
+  .vz-labs { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; font-size: .84rem; margin-top: 1rem; }
+
+  .vz-stage-wrap { margin: 1.5rem 0 2.5rem; }
+
+  .vz-guide {
+    display: grid; gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    margin-bottom: 3rem;
+  }
+  .vz-guide-col {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1.1rem 1.25rem; background: var(--surface);
+  }
+  .vz-guide-col h2 {
+    margin: 0 0 .7rem; font-size: .72rem; font-weight: 700;
+    letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3);
+  }
+  .vz-guide-col ol, .vz-guide-col ul { margin: 0; padding-left: 1.2em; font-size: .9rem; }
+  .vz-guide-col li { margin: .45em 0; }
+  .vz-guide-col p { font-size: .9rem; margin: 0 0 .6rem; }
+  .vz-source { background: var(--surface-2); }
+
+  .section-rule {
+    font-size: .76rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3);
+    padding-bottom: .5rem; border-bottom: 1px solid var(--border); margin: 0 0 1.2rem;
+  }
+</style>

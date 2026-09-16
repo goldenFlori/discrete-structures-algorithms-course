@@ -1,0 +1,171 @@
+---
+import Base from '../../layouts/Base.astro';
+import Notebook from '../../components/Notebook.astro';
+import LabToc from '../../components/LabToc.astro';
+import data from '../../generated/course.json';
+import notebooks from '../../generated/notebooks.json';
+
+export function getStaticPaths() {
+  return (data.homework as any[])
+    .filter((h) => (h.status ?? 'published') !== 'draft')
+    .map((h) => ({ params: { id: h.id }, props: { hw: h } }));
+}
+
+const { hw } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const nb = hw.notebook ? (notebooks as Record<string, any>)[hw.notebook] : null;
+const labs = data.labs as any[];
+const lab = labs.find((l) => l.n === hw.lab);
+const alsoLabs = (hw.alsoLabs ?? []).map((n: number) => labs.find((l) => l.n === n)).filter(Boolean);
+const topicName = (id: string) => (data.topics as any[]).find((t) => t.id === id)?.name || id;
+const kb = (n: number) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.round(n / 1024)} KB`);
+const { course } = data;
+---
+
+<Base title={`Detyrë — ${hw.title}`} description={hw.summary}>
+  <article class="hw">
+    <header class="hw-head">
+      <nav class="crumbs no-print" aria-label="Rruga">
+        <a href={`${base}detyrat/`}>Detyrat</a>
+        <span aria-hidden="true">/</span>
+        <span>{hw.title}</span>
+      </nav>
+
+      <div class="hw-eyebrow">
+        <span class="badge badge-accent">Detyrë Shtëpie</span>
+        <span class="badge badge-neutral">Fletore më vete</span>
+        {lab && (
+          <a class="hw-parent" href={`${base}laboratoret/${lab.slug}/`}>
+            Laboratori {lab.slug} — {lab.title}
+          </a>
+        )}
+      </div>
+
+      <h1>{hw.title}</h1>
+      {hw.summary && <p class="hw-lede">{hw.summary}</p>}
+
+      <dl class="hw-facts">
+        <div>
+          <dt>Laboratori</dt>
+          <dd>
+            {lab && <a href={`${base}laboratoret/${lab.slug}/`}>Laboratori {lab.slug}</a>}
+            {alsoLabs.length > 0 && (
+              <> · mbulon edhe {alsoLabs.map((l: any, i: number) => (
+                <>{i > 0 && ', '}<a href={`${base}laboratoret/${l.slug}/`}>Lab {l.slug}</a></>
+              ))}</>
+            )}
+          </dd>
+        </div>
+        <div>
+          <dt>Temat</dt>
+          <dd>{(hw.topics ?? []).map((t: string) => <span class="chip">{topicName(t)}</span>)}</dd>
+        </div>
+        <div>
+          <dt>Afati</dt>
+          <dd>{hw.due || 'Njoftohet në Google Classroom'}</dd>
+        </div>
+        {nb && (
+          <div>
+            <dt>Fletorja</dt>
+            <dd class="mono">{hw.notebook} · {kb(nb.sizeBytes)}</dd>
+          </div>
+        )}
+      </dl>
+
+      <div class="hw-actions no-print">
+        {nb && <a class="btn btn-primary" href={`${base}shkarkime/${hw.notebook}`} download>Shkarko fletoren</a>}
+        {lab && <a class="btn" href={`${base}laboratoret/${lab.slug}/`}>Hap laboratorin</a>}
+        {course.classroomUrl && (
+          <a class="btn" href={course.classroomUrl} target="_blank" rel="noopener noreferrer">Dorëzo në Classroom ↗</a>
+        )}
+      </div>
+
+      <div class="callout callout-info no-print">
+        <p class="callout-title">Si të punoni me këtë detyrë</p>
+        <ol style="margin:0">
+          <li>Shkarkoni fletoren dhe hapeni me Jupyter ose VS Code.</li>
+          <li>Plotësoni vetëm vendet e shënuara në kod dhe në qelizat Markdown.</li>
+          <li>Ekzekutojeni që rezultatet të ruhen brenda fletores.</li>
+          <li>Ruajeni dhe dorëzojeni në Google Classroom.</li>
+        </ol>
+      </div>
+
+      {hw.spoilerWarning && (
+        <div class="callout callout-warn">
+          <p class="callout-title">Para se të lexoni më poshtë</p>
+          <p style="margin:0">{hw.spoilerWarning}</p>
+        </div>
+      )}
+
+      {nb && nb.dependencies.length > 0 && (
+        <p class="hw-deps muted">
+          Paketat që kërkon kjo detyrë:
+          {nb.dependencies.map((d: string, i: number) => (<>{i > 0 && ', '}<code>{d}</code></>))}
+          {' · '}<a href={`${base}python/`}>udhëzimet e instalimit</a>
+        </p>
+      )}
+    </header>
+
+    {nb && (
+      <div class="hw-body">
+        <aside class="hw-side no-print"><LabToc toc={nb.toc} title="Në këtë detyrë" /></aside>
+        <div class="hw-main">
+          <Notebook notebook={nb} spoilerWarning={hw.spoilerWarning} />
+        </div>
+      </div>
+    )}
+
+    <nav class="hw-back no-print">
+      <a class="card card-link" href={`${base}detyrat/`}>
+        <small>← Të gjitha detyrat</small>
+        <strong>Detyrat e Shtëpisë</strong>
+      </a>
+      {lab && (
+        <a class="card card-link" href={`${base}laboratoret/${lab.slug}/`}>
+          <small>Laboratori përkatës →</small>
+          <strong>Laboratori {lab.slug} — {lab.title}</strong>
+        </a>
+      )}
+    </nav>
+  </article>
+</Base>
+
+<style>
+  .hw { padding: 1.5rem 0 3rem; }
+  .crumbs { display: flex; gap: .5rem; font-size: .84rem; color: var(--ink-faint); margin-bottom: 1rem; }
+  .crumbs a { color: var(--ink-3); text-decoration: none; }
+  .crumbs a:hover { color: var(--accent); }
+
+  .hw-head { max-width: 820px; }
+  .hw-eyebrow { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-bottom: .7rem; }
+  .hw-parent { font-size: .84rem; color: var(--ink-3); text-decoration: none; }
+  .hw-parent:hover { color: var(--accent); }
+  .hw-lede { font-size: 1.02rem; color: var(--ink-2); }
+
+  .hw-facts {
+    display: grid; gap: .9rem 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    margin: 1.5rem 0;
+    padding: 1rem 1.2rem;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--surface-2);
+  }
+  .hw-facts dt { font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: .2rem; }
+  .hw-facts dd { margin: 0; font-size: .88rem; }
+  .hw-facts .chip { font-size: .72rem; margin-right: .2rem; }
+  .hw-facts .mono { font-size: .78rem; }
+
+  .hw-actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: 1.5rem; }
+  .hw-deps { font-size: .86rem; }
+
+  .hw-body { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2.5rem; }
+  @media (min-width: 1025px) {
+    .hw-body { grid-template-columns: 230px minmax(0, 1fr); gap: 3rem; align-items: start; }
+    .hw-side { order: -1; }
+  }
+  .hw-main { min-width: 0; }
+
+  .hw-back { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-top: 3.5rem; }
+  .hw-back a { display: flex; flex-direction: column; gap: .2rem; }
+  .hw-back small { color: var(--ink-3); font-size: .8rem; }
+</style>

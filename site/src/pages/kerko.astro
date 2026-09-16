@@ -1,0 +1,155 @@
+---
+import Base from '../layouts/Base.astro';
+import data from '../generated/course.json';
+
+const base = import.meta.env.BASE_URL;
+
+// Terms a student is most likely to search for while revising — drawn from
+// the algorithms that actually appear in the notebooks.
+const SUGGEST = [
+  'Big O', 'Merge Sort', 'Insertion Sort', 'Selection Sort',
+  'BFS', 'DFS', 'Kruskal', 'Prim', 'MST',
+  'Dijkstra', 'Bellman-Ford', 'Floyd-Warshall',
+  'Edmonds-Karp', 'Ford-Fulkerson', 'Max-Flow', 'Min-Cut',
+  'Renditje Topologjike', 'Komponentet e Lidhura Fort',
+  'matrica e fqinjësisë', 'lista e fqinjësisë', 'cikël negativ',
+];
+---
+
+<Base title="Kërko" description="Kërkoni në të gjithë materialin e semestrit — teori, kod, ushtrime dhe detyra." indexable={false}>
+  <div class="page">
+    <header class="page-head">
+      <h1>Kërko</h1>
+      <p class="lede">
+        Kërkimi shkon në të gjithë përmbajtjen e faqes: teorinë, kodin, ushtrimet dhe detyrat.
+        Ekzekutohet plotësisht në shfletuesin tuaj — asnjë kërkim nuk dërgohet askund.
+      </p>
+    </header>
+
+    <div id="search" class="search-host">
+      <noscript>
+        <div class="callout callout-warn">
+          <p class="callout-title">Kërkimi kërkon JavaScript</p>
+          <p style="margin:0">
+            Pa të, mund të shfletoni materialin te
+            <a href={`${base}laboratoret/`}>Laboratorët</a> ose
+            <a href={`${base}detyrat/`}>Detyrat</a>.
+          </p>
+        </div>
+      </noscript>
+    </div>
+
+    <section class="suggest">
+      <h2>Terma të kërkuar shpesh</h2>
+      <div class="suggest-chips">
+        {SUGGEST.map((s) => (
+          <button type="button" class="chip suggest-chip" data-q={s}>{s}</button>
+        ))}
+      </div>
+      <p class="muted" style="font-size:.86rem">
+        Shënim: shumica e materialit është në shqip, ndërsa termat teknikë
+        (BFS, DFS, Big O, Merge Sort, Dijkstra…) përdoren në anglisht — kërkoni në të dyja gjuhët.
+      </p>
+    </section>
+  </div>
+</Base>
+
+<link rel="stylesheet" href={`${base}pagefind/pagefind-ui.css`} />
+
+<script define:vars={{ base }}>
+  // Pagefind builds its index after Astro, so it is loaded at runtime.
+  (async () => {
+    const host = document.getElementById('search');
+    try {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = `${base}pagefind/pagefind-ui.js`;
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+
+      // eslint-disable-next-line no-undef
+      const ui = new PagefindUI({
+        element: '#search',
+        showSubResults: true,
+        showImages: false,
+        excerptLength: 26,
+        resetStyles: false,
+        translations: {
+          placeholder: 'Kërkoni: Dijkstra, Big O, BFS…',
+          clear_search: 'Pastro',
+          load_more: 'Shfaq më shumë rezultate',
+          search_label: 'Kërko në këtë faqe',
+          filters_label: 'Filtra',
+          zero_results: 'Asnjë rezultat për [SEARCH_TERM]',
+          many_results: '[COUNT] rezultate për [SEARCH_TERM]',
+          one_result: '1 rezultat për [SEARCH_TERM]',
+          alt_search: 'Asnjë rezultat për [SEARCH_TERM]. U shfaqën rezultate për [DIFFERENT_TERM]',
+          search_suggestion: 'Asnjë rezultat për [SEARCH_TERM]. Provoni një nga këto kërkime:',
+          searching: 'Duke kërkuar…',
+        },
+      });
+
+      const input = () => document.querySelector('#search input');
+      for (const b of document.querySelectorAll('.suggest-chip')) {
+        b.addEventListener('click', () => {
+          const el = input();
+          if (!el) return;
+          el.value = b.dataset.q;
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.focus();
+          el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        });
+      }
+
+      // ?q= lets other pages link straight into a search.
+      const q = new URLSearchParams(location.search).get('q');
+      if (q) {
+        const el = input();
+        if (el) { el.value = q; el.dispatchEvent(new Event('input', { bubbles: true })); }
+      } else {
+        input()?.focus();
+      }
+    } catch {
+      host.innerHTML =
+        '<div class="callout callout-warn"><p class="callout-title">Indeksi i kërkimit nuk u ngarkua</p>' +
+        '<p style="margin:0">Ky indeks krijohet gjatë ndërtimit të faqes. Në modalitetin e zhvillimit ' +
+        '(<code>npm run dev</code>) ai mungon — përdorni <code>npm run build &amp;&amp; npm run preview</code>.</p></div>';
+    }
+  })();
+</script>
+
+<style>
+  .page { padding: 2rem 0 3rem; max-width: 820px; }
+  .page-head { margin-bottom: 1.5rem; }
+  .lede { color: var(--ink-2); font-size: 1.02rem; }
+
+  .search-host { min-height: 120px; }
+
+  .suggest { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+  .suggest h2 { font-size: .76rem; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 .8rem; }
+  .suggest-chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1rem; }
+  .suggest-chip { font: inherit; font-size: .82rem; cursor: pointer; }
+  .suggest-chip:hover { border-color: var(--accent-line); color: var(--accent-ink); background: var(--accent-soft); }
+</style>
+
+<style is:global>
+  /* Blend Pagefind's UI into the site's tokens. */
+  :root {
+    --pagefind-ui-primary: var(--accent);
+    --pagefind-ui-text: var(--ink);
+    --pagefind-ui-background: var(--surface);
+    --pagefind-ui-border: var(--border);
+    --pagefind-ui-tag: var(--surface-2);
+    --pagefind-ui-border-width: 1px;
+    --pagefind-ui-border-radius: var(--radius-sm);
+    --pagefind-ui-font: var(--font-sans);
+  }
+  .pagefind-ui__search-input { font-size: 1rem !important; }
+  .pagefind-ui__result { border-top: 1px solid var(--border); padding-top: 1rem; }
+  .pagefind-ui__result-title a { font-size: 1rem; font-weight: 600; }
+  .pagefind-ui__result-excerpt { font-size: .88rem; color: var(--ink-3); }
+  .pagefind-ui__result-excerpt mark { background: var(--accent-soft); color: var(--accent-ink); font-weight: 650; padding: 0 .15em; border-radius: 2px; }
+  .pagefind-ui__result-tags { color: var(--ink-faint); }
+</style>

@@ -1,0 +1,411 @@
+---
+import Base from '../../layouts/Base.astro';
+import Notebook from '../../components/Notebook.astro';
+import LabToc from '../../components/LabToc.astro';
+import data from '../../generated/course.json';
+import notebooks from '../../generated/notebooks.json';
+
+export function getStaticPaths() {
+  // Draft and coming-soon laboratories never get a page. Nothing unpublished
+  // is reachable, even by guessing the URL.
+  return (data.labs as any[])
+    .filter((l) => l.isPublic)
+    .map((lab) => ({ params: { slug: lab.slug }, props: { lab } }));
+}
+
+const { lab } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const nbs: Record<string, any> = notebooks;
+
+const topicName = (id: string) => (data.topics as any[]).find((t) => t.id === id)?.name || id;
+const pub = (data.labs as any[]).filter((l) => l.isPublic);
+const i = pub.findIndex((l) => l.n === lab.n);
+const prev = i > 0 ? pub[i - 1] : null;
+const next = i < pub.length - 1 ? pub[i + 1] : null;
+
+const mainRes = lab.resources.filter((r: any) => r.type === 'main' && r.available);
+const suppRes = lab.resources.filter((r: any) => r.type !== 'main' && r.available);
+const missing = lab.resources.filter((r: any) => !r.available);
+
+/** Table of contents for the primary reading path only. */
+const primary = mainRes[0];
+const primaryNb = primary ? nbs[primary.notebook] : null;
+const toc = (() => {
+  if (!primaryNb) return [];
+  if (!primary.slice?.length) return primaryNb.toc;
+  const ids = new Set(
+    primary.slice.flatMap((r: any) =>
+      primaryNb.cells.slice(r.from ?? 0, r.to ?? primaryNb.cells.length),
+    ).filter((c: any) => c.type === 'markdown' && c.id).map((c: any) => c.id),
+  );
+  return primaryNb.toc.filter((t: any) => ids.has(t.id));
+})();
+
+const vizList = (data.visualizers as any[]).filter((v) => (lab.visualizers || []).includes(v.id));
+const hwStandalone = (data.homework as any[]).filter(
+  (h) => h.lab === lab.n || (h.alsoLabs || []).includes(lab.n),
+);
+
+// Every downloadable file on this page, deduplicated.
+const downloads = [
+  ...lab.resources.filter((r: any) => r.available).map((r: any) => ({
+    file: r.notebook, title: r.title, size: nbs[r.notebook].sizeBytes, kind: r.type,
+  })),
+  ...hwStandalone.filter((h) => h.notebook).map((h) => ({
+    file: h.notebook, title: `Detyrë — ${h.title}`, size: nbs[h.notebook]?.sizeBytes ?? 0, kind: 'homework',
+  })),
+].filter((d, idx, arr) => arr.findIndex((x) => x.file === d.file) === idx);
+
+const kb = (n: number) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.round(n / 1024)} KB`);
+const desktopOnly = lab.flags.pygame || lab.flags.tkinter;
+
+// The suggested reading order — so nobody has to guess what to open first.
+const path: { label: string; note: string; href: string }[] = [];
+mainRes.forEach((r: any) => path.push({ label: r.title, note: r.note || 'Materiali kryesor', href: '#materiali-kryesor' }));
+suppRes.forEach((r: any) => path.push({ label: r.title, note: r.note || 'Material plotësues', href: `#${r.notebook.replace(/\W+/g, '-')}` }));
+vizList.forEach((v) => path.push({ label: v.title, note: 'Provoje interaktivisht', href: `${base}vizualizime/${v.id}/` }));
+if (lab.homeworkEmbedded.length || hwStandalone.length) {
+  path.push({ label: 'Detyra e Shtëpisë', note: 'Pas laboratorit', href: '#detyra' });
+}
+---
+
+<Base title={`Laboratori ${lab.slug} — ${lab.title}`} description={lab.summary}>
+  <article class="lab">
+    {/* ---------------------------------------------------------- header */}
+    <header class="lab-header">
+      <nav class="crumbs no-print" aria-label="Rruga">
+        <a href={`${base}laboratoret/`}>Laboratorët</a>
+        <span aria-hidden="true">/</span>
+        <span>Laboratori {lab.slug}</span>
+      </nav>
+
+      <div class="lab-eyebrow">
+        <span class="lab-num">Laboratori {lab.slug}</span>
+        {lab.week && <span class="muted">Java {lab.week}</span>}
+        <span class={`badge ${lab.status === 'updated' ? 'badge-accent' : 'badge-ok'}`}>
+          {lab.status === 'updated' ? 'I përditësuar' : 'I publikuar'}
+        </span>
+      </div>
+
+      <h1>{lab.title}</h1>
+      {lab.summary && <p class="lab-lede">{lab.summary}</p>}
+
+      {lab.topics?.length > 0 && (
+        <div class="lab-chips">
+          {lab.topics.map((t: string) => <span class="chip">{topicName(t)}</span>)}
+        </div>
+      )}
+
+      {lab.note && (
+        <div class="callout callout-info">
+          <p class="callout-title">Shënim për këtë laborator</p>
+          <p style="margin:0">{lab.note}</p>
+        </div>
+      )}
+
+      {lab.issues?.length > 0 && (
+        <div class="callout callout-warn">
+          <p class="callout-title">Vërejtje teknike te materiali</p>
+          <ul style="margin:0">{lab.issues.map((x: string) => <li>{x}</li>)}</ul>
+        </div>
+      )}
+
+      {missing.length > 0 && (
+        <div class="callout callout-warn">
+          <p class="callout-title">Material i papublikuar</p>
+          <ul style="margin:0">
+            {missing.map((r: any) => <li>{r.title} — fletorja nuk është shtuar ende.</li>)}
+          </ul>
+        </div>
+      )}
+    </header>
+
+    {/* ------------------------------------------------- where to start */}
+    {path.length > 1 && (
+      <section class="start-here no-print" aria-labelledby="start-title">
+        <h2 id="start-title">Nga ku të filloj</h2>
+        <ol class="start-list">
+          {path.map((p, idx) => (
+            <li>
+              <a href={p.href}>
+                <span class="start-n">{idx + 1}</span>
+                <span class="start-body">
+                  <strong>{p.label}</strong>
+                  <small>{p.note}</small>
+                </span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </section>
+    )}
+
+    {desktopOnly && (
+      <div class="callout callout-info no-print">
+        <p class="callout-title">Çfarë ju duhet për këtë laborator</p>
+        <p>
+          Disa ushtrime hapin dritare në desktop dhe ekzekutohen vetëm lokalisht (jo në shfletues, jo në Colab).
+          Paketat e nevojshme:
+          {lab.dependencies.map((d: string, n: number) => (<>{n > 0 && ', '}<code>{d}</code></>))}.
+        </p>
+        <p style="margin-bottom:0">
+          <a class="btn btn-sm" href={`${base}python/`}>Udhëzimet e instalimit</a>
+        </p>
+      </div>
+    )}
+
+    {/* ------------------------------------------------ main + sidebar */}
+    <div class="lab-body">
+      <aside class="lab-side no-print">
+        <LabToc toc={toc} />
+      </aside>
+
+      <div class="lab-main">
+        {primaryNb && (
+          <section id="materiali-kryesor">
+            <h2 class="section-rule">Materiali kryesor</h2>
+            <p class="res-meta">
+              <code>{primary.notebook}</code>
+              <span>·</span>
+              <span>{primaryNb.stats.code} qeliza kodi</span>
+              <span>·</span>
+              <span>{kb(primaryNb.sizeBytes)}</span>
+            </p>
+            <Notebook notebook={primaryNb} slice={primary.slice} />
+          </section>
+        )}
+
+        {mainRes.slice(1).map((r: any) => (
+          <section>
+            <h2 class="section-rule">{r.title}</h2>
+            <Notebook notebook={nbs[r.notebook]} slice={r.slice} />
+          </section>
+        ))}
+
+        {suppRes.length > 0 && (
+          <section class="supp">
+            <h2 class="section-rule">Material plotësues</h2>
+            <p class="muted" style="font-size:.9rem">
+              Këto fletore thellojnë temën e laboratorit. Hapini pasi të keni kaluar materialin kryesor.
+            </p>
+            <div class="grid grid-2 supp-grid">
+              {suppRes.map((r: any) => {
+                const nb = nbs[r.notebook];
+                return (
+                  <a class="card card-link supp-card" href={`${base}laboratoret/${lab.slug}/${r.notebook.replace(/\.ipynb$/, '')}/`}>
+                    <div class="supp-top">
+                      <span class="badge badge-violet">{r.type === 'supplementary' ? 'Plotësues' : 'Demonstrim'}</span>
+                      {r.lang === 'en' && <span class="badge badge-neutral" title="Përmbajtja është në anglisht">EN</span>}
+                    </div>
+                    <h3>{r.title}</h3>
+                    {r.note && <p class="muted">{r.note}</p>}
+                    <p class="supp-meta">
+                      {nb.stats.code} qeliza kodi · {kb(nb.sizeBytes)}
+                      {nb.missingScripts.length > 0 && <><br /><span class="warn-inline">Kërkon skedar shoqërues që nuk është publikuar</span></>}
+                    </p>
+                    <span class="lab-cta">Hap materialin →</span>
+                  </a>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* -------------------------------------------------- homework */}
+        {(lab.homeworkEmbedded.length > 0 || hwStandalone.length > 0) && (
+          <section id="detyra">
+            <h2 class="section-rule">Detyra e shtëpisë</h2>
+            <div class="hw-list">
+              {lab.homeworkEmbedded.map((h: any) => (
+                <div class="card hw-card hw-embedded">
+                  <div class="hw-top">
+                    <span class="badge badge-danger">Brenda laboratorit</span>
+                  </div>
+                  <h3>{h.title}</h3>
+                  {h.note && <p class="muted">{h.note}</p>}
+                  <p class="hw-actions">
+                    <a class="btn btn-sm btn-primary" href={`#${h.anchor}`}>Shko te detyra në fletore</a>
+                    {primary && <a class="btn btn-sm" href={`${base}shkarkime/${primary.notebook}`} download>Shkarko fletoren</a>}
+                  </p>
+                </div>
+              ))}
+              {hwStandalone.map((h: any) => (
+                <div class="card hw-card">
+                  <div class="hw-top">
+                    <span class="badge badge-accent">Fletore më vete</span>
+                    {h.lab !== lab.n && <span class="badge badge-neutral">Mbulon edhe Lab {String(h.lab).padStart(2, '0')}</span>}
+                  </div>
+                  <h3>{h.title}</h3>
+                  {h.summary && <p class="muted">{h.summary}</p>}
+                  <p class="hw-actions">
+                    <a class="btn btn-sm btn-primary" href={`${base}detyrat/${h.id}/`}>Hap detyrën</a>
+                    {h.notebook && <a class="btn btn-sm" href={`${base}shkarkime/${h.notebook}`} download>Shkarko</a>}
+                  </p>
+                </div>
+              ))}
+            </div>
+            {data.course.classroomUrl && (
+              <p class="muted" style="font-size:.88rem">
+                Dorëzimi bëhet në <a href={data.course.classroomUrl} target="_blank" rel="noopener noreferrer">Google Classroom</a>.
+              </p>
+            )}
+          </section>
+        )}
+
+        {/* ----------------------------------------------- visualizers */}
+        {vizList.length > 0 && (
+          <section id="vizualizime" class="no-print">
+            <h2 class="section-rule">Provojini interaktivisht</h2>
+            <p class="muted" style="font-size:.9rem">
+              Këto vegla ndjekin të njëjtat algoritme të këtij laboratori, hap pas hapi, drejtpërdrejt në shfletues.
+            </p>
+            <div class="grid grid-2">
+              {vizList.map((v) => (
+                <a class="card card-link viz-card" href={`${base}vizualizime/${v.id}/`}>
+                  <span class="badge badge-accent">Interaktiv</span>
+                  <h3>{v.title}</h3>
+                  <p class="viz-tag mono">{v.tagline}</p>
+                  <p class="muted">{v.summary}</p>
+                  <span class="lab-cta">Hape →</span>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ------------------------------------------------- downloads */}
+        <section id="shkarkime">
+          <h2 class="section-rule">Shkarkime</h2>
+          <p class="muted" style="font-size:.9rem">
+            Fletoret origjinale, të pandryshuara. Hapini me Jupyter Notebook, JupyterLab ose VS Code.
+          </p>
+          <ul class="dl-list">
+            {downloads.map((d) => (
+              <li>
+                <a href={`${base}shkarkime/${d.file}`} download>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                    <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16" />
+                  </svg>
+                  <span class="dl-name">{d.title}</span>
+                  <code class="dl-file">{d.file}</code>
+                  <span class="dl-size">{kb(d.size)}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+    </div>
+
+    {/* ------------------------------------------------------ prev/next */}
+    <nav class="lab-nav no-print" aria-label="Navigim midis laboratorëve">
+      {prev ? (
+        <a class="card card-link nav-prev" href={`${base}laboratoret/${prev.slug}/`}>
+          <small>← Laboratori {prev.slug}</small>
+          <strong>{prev.title}</strong>
+        </a>
+      ) : <div />}
+      {next ? (
+        <a class="card card-link nav-next" href={`${base}laboratoret/${next.slug}/`}>
+          <small>Laboratori {next.slug} →</small>
+          <strong>{next.title}</strong>
+        </a>
+      ) : <div />}
+    </nav>
+  </article>
+</Base>
+
+<style>
+  .lab { padding: 1.5rem 0 3rem; }
+
+  .crumbs { display: flex; gap: .5rem; font-size: .84rem; color: var(--ink-faint); margin-bottom: 1rem; }
+  .crumbs a { color: var(--ink-3); text-decoration: none; }
+  .crumbs a:hover { color: var(--accent); }
+
+  .lab-header { max-width: 820px; }
+  .lab-eyebrow { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-bottom: .6rem; font-size: .84rem; }
+  .lab-num { font-family: var(--font-mono); font-weight: 700; color: var(--accent); letter-spacing: .02em; }
+  .lab-lede { font-size: 1.05rem; color: var(--ink-2); line-height: 1.6; }
+  .lab-chips { display: flex; flex-wrap: wrap; gap: .35rem; margin: 1rem 0; }
+
+  .start-here { margin: 2rem 0; }
+  .start-here h2 { font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 .7rem; }
+  .start-list { list-style: none; padding: 0; margin: 0; display: grid; gap: .4rem; max-width: 720px; }
+  .start-list li { margin: 0; }
+  .start-list a {
+    display: flex; align-items: center; gap: .8rem;
+    padding: .65rem .9rem; text-decoration: none; color: inherit;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--surface); transition: border-color .12s, background .12s;
+  }
+  .start-list a:hover { border-color: var(--accent-line); background: var(--accent-soft); }
+  .start-n {
+    flex: none; width: 24px; height: 24px; display: grid; place-items: center;
+    border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border);
+    font: 700 .74rem/1 var(--font-mono); color: var(--ink-3);
+  }
+  .start-list a:hover .start-n { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .start-body { display: flex; flex-direction: column; min-width: 0; }
+  .start-body strong { font-size: .92rem; font-weight: 580; }
+  .start-body small { color: var(--ink-3); font-size: .8rem; }
+
+  .lab-body { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2.5rem; }
+  @media (min-width: 1025px) {
+    .lab-body { grid-template-columns: 230px minmax(0, 1fr); gap: 3rem; align-items: start; }
+    .lab-side { order: -1; }
+  }
+  .lab-main { min-width: 0; }
+
+  .section-rule {
+    font-size: .76rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3);
+    padding-bottom: .5rem; border-bottom: 1px solid var(--border);
+    margin: 3rem 0 1.2rem;
+  }
+  .lab-main > section:first-child .section-rule { margin-top: 0; }
+
+  .res-meta { display: flex; flex-wrap: wrap; gap: .5rem; font-size: .82rem; color: var(--ink-faint); margin-bottom: 1.5rem; }
+  .res-meta code { font-size: .78rem; }
+
+  .supp-grid { margin-top: 1rem; }
+  .supp-card { display: flex; flex-direction: column; gap: .5rem; }
+  .supp-top { display: flex; gap: .35rem; }
+  .supp-card h3 { margin: 0; font-size: 1rem; }
+  .supp-card p { margin: 0; font-size: .87rem; }
+  .supp-meta { font-size: .8rem !important; color: var(--ink-faint); }
+  .warn-inline { color: var(--warn); }
+
+  .hw-list { display: grid; gap: .9rem; }
+  .hw-card { display: flex; flex-direction: column; gap: .5rem; }
+  .hw-card h3 { margin: 0; font-size: 1rem; }
+  .hw-card p { margin: 0; font-size: .89rem; }
+  .hw-top { display: flex; flex-wrap: wrap; gap: .35rem; }
+  .hw-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .3rem !important; }
+  .hw-embedded { border-left: 3px solid var(--danger-line); }
+
+  .viz-card { display: flex; flex-direction: column; gap: .45rem; align-items: flex-start; }
+  .viz-card h3 { margin: 0; font-size: 1rem; }
+  .viz-card p { margin: 0; font-size: .87rem; }
+  .viz-tag { font-size: .76rem !important; color: var(--accent); }
+
+  .dl-list { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: .4rem; }
+  .dl-list li { margin: 0; }
+  .dl-list a {
+    display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
+    padding: .6rem .85rem; text-decoration: none; color: inherit;
+    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
+  }
+  .dl-list a:hover { border-color: var(--accent-line); background: var(--accent-soft); }
+  .dl-list svg { flex: none; color: var(--accent); }
+  .dl-name { font-size: .9rem; font-weight: 550; }
+  .dl-file { font-size: .74rem; color: var(--ink-faint); }
+  .dl-size { margin-left: auto; font-size: .76rem; color: var(--ink-faint); font-family: var(--font-mono); }
+
+  .lab-nav { display: grid; gap: 1rem; grid-template-columns: 1fr 1fr; margin-top: 4rem; }
+  .lab-nav a { display: flex; flex-direction: column; gap: .2rem; }
+  .lab-nav small { color: var(--ink-3); font-size: .8rem; }
+  .lab-nav strong { font-size: .95rem; font-weight: 580; }
+  .nav-next { text-align: right; }
+  @media (max-width: 640px) { .lab-nav { grid-template-columns: 1fr; } .nav-next { text-align: left; } }
+
+  .lab-cta { display: inline-flex; align-items: center; gap: .3rem; font-size: .85rem; font-weight: 580; color: var(--accent); margin-top: auto; }
+</style>
