@@ -54,7 +54,7 @@ const SUGGEST = [
   </div>
 </Base>
 
-<link rel="stylesheet" href={`${base}_pagefind/pagefind-ui.css`} />
+<link rel="stylesheet" href={`${base}pagefind/pagefind-ui.css`} />
 
 <script define:vars={{ base }}>
   // Pagefind builds its index after Astro, so it is loaded at runtime.
@@ -63,7 +63,7 @@ const SUGGEST = [
     try {
       await new Promise((resolve, reject) => {
         const s = document.createElement('script');
-        s.src = `${base}_pagefind/pagefind-ui.js`;
+        s.src = `${base}pagefind/pagefind-ui.js`;
         s.onload = resolve;
         s.onerror = reject;
         document.head.appendChild(s);

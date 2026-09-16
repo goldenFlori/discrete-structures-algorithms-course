@@ -6,7 +6,7 @@
   "scripts": {
     "content": "node scripts/build-content.mjs",
     "dev": "npm run content && astro dev",
-    "build": "npm run content && astro build && npm run vendor && pagefind --site dist --output-subdir _pagefind",
+    "build": "npm run content && astro build && npm run vendor && pagefind --site dist --output-subdir pagefind",
     "vendor": "node scripts/vendor.mjs",
     "preview": "astro preview",
     "check": "node scripts/build-content.mjs && astro check",
