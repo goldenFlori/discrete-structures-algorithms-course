@@ -32,11 +32,11 @@ Python përditësohen vetvetiu.
 |---|---|
 | [`docs/ANALYSIS.md`](docs/ANALYSIS.md) | Auditimi i plotë i 14 fletoreve, rindërtimi i strukturës së lëndës, paqartësitë e gjetura dhe arsyetimi i çdo vendimi teknik |
 | [`docs/UDHEZUES.md`](docs/UDHEZUES.md) | Udhëzuesi praktik i mirëmbajtjes |
+| [`docs/LEKSIONET-DHE-LABORATORET.md`](docs/LEKSIONET-DHE-LABORATORET.md) | Harta koncept-për-koncept: çdo slide i Leksioneve 1–6 ↔ ushtrimi që e praktikon; ushtrimet shtesë dhe Laboratori 10 |
 
-> **Një pyetje pret konfirmimin tuaj:** nuk u dorëzua fletore e veçantë për
-> Laboratorin 6. Materiali i tij jeton në Ushtrimet 4–6 të fletores së
-> Laboratorit 5, të cilave u referohet shprehimisht detyra e Laboratorit 6.
-> Faqja e trajton kështu; detajet te `docs/ANALYSIS.md`, çështja **C-2**.
+> **Laboratori 6** nuk ka fletore më vete: materiali i tij jeton në Ushtrimet 4–6
+> të fletores së Laboratorit 5, të cilave u referohet shprehimisht detyra e
+> Laboratorit 6. Faqja e trajton kështu; detajet te `docs/ANALYSIS.md`, **C-2**.
 
 ---
 
@@ -47,8 +47,8 @@ cd site
 npm install
 npm run dev        # http://localhost:4321
 npm run build      # ndërton në site/dist/
-npm run preview    # shikon ndërtimin, me kërkimin aktiv
-npm run qa         # 56 kontrolle në një shfletues të vërtetë
+npm run preview    # shikon ndërtimin, ashtu siç publikohet
+npm run qa         # ~80 kontrolle në një shfletues të vërtetë
 ```
 
 ### Struktura
@@ -64,12 +64,18 @@ site/
 │   ├── notebook.mjs        # .ipynb → paraqitje e sigurt për web
 │   ├── build-content.mjs   # hapi i ndërtimit + validimi i konfigurimit
 │   ├── vendor.mjs          # kopjon plotly.js në dist/
+│   ├── dev-extras.mjs      # kërkimi ⌘K + Plotly edhe gjatë npm run dev
 │   └── qa.mjs              # testet në shfletues
 └── src/
-    ├── components/         # renderuesi i fletoreve, kartelat, TOC
-    ├── pages/              # kreu, laboratorët, detyrat, vizualizimet, python
-    ├── scripts/viz/        # pesë vizualizuesit interaktivë
-    └── styles/
+    ├── components/
+    │   ├── nb/             # renderuesi i pastër i fletoreve (+ vizualizimet brenda tyre)
+    │   ├── site/           # navigimi, kërkimi ⌘K, tema, fundi i faqes
+    │   └── VizEmbed.astro  # id e vizualizimit → komponenti React
+    ├── pages/              # kreu, laboratorët, detyrat, vizualizimet, mjedisi
+    ├── viz/                # 13 vizualizimet interaktive (React + HeroUI)
+    │   ├── algorithms/     # algoritmet si funksione të pastra që kthejnë hapat
+    │   └── kit/            # VizShell, PlayerBar, GraphCanvas, LineChart …
+    └── styles/app.css      # Tailwind v4 + tema e HeroUI, e çelët dhe e errët
 ```
 
 ### Arkitektura, shkurt
@@ -82,7 +88,8 @@ site/
 | Matematika | **KaTeX** | Renderohet në ndërtim |
 | Grafikët e fletoreve | **plotly.js** me ngarkim të vonuar | Outputet ekzistuese mbeten interaktive, jo screenshot |
 | Kërkimi | **Pagefind** | Indeks statik, pa API, pa çelës, pa kosto |
-| Vizualizuesit | Web Components + SVG | Pa framework runtime |
+| Ndërfaqja | **Tailwind CSS v4** + **HeroUI v3** | Dizajn modern, i njëjtë në HTML statik dhe në React; temë e errët |
+| Vizualizimet | **React** si “ishuj” Astro + SVG | Hidratohen vetëm kur studenti arrin te to; renderohen fillimisht në server |
 | Hosting | **GitHub Pages** | Falas, i besueshëm, pa server |
 
 Arsyetimi i plotë dhe alternativat e refuzuara: `docs/ANALYSIS.md`, seksioni **J**.
@@ -91,8 +98,9 @@ Arsyetimi i plotë dhe alternativat e refuzuara: `docs/ANALYSIS.md`, seksioni **
 
 ## Parime që sistemi i respekton
 
-- **Fletoret origjinale nuk ndryshohen kurrë.** Ato vetëm lexohen; `MANIFEST.json`
-  ruan `sha256` e secilës bashkë me emrin me të cilin u dorëzua.
+- **Sistemi nuk i ndryshon kurrë fletoret.** Ato vetëm lexohen; `MANIFEST.json`
+  ruan `sha256` e secilës bashkë me emrin me të cilin u dorëzua, dhe çdo ndryshim
+  që bën autori (`identik: false`) shënohet aty me përshkrim.
 - **Asnjë fletore nuk ekzekutohet gjatë ndërtimit.** Shumë prej tyre hapin dritare
   Pygame ose Tkinter; publikohen rezultatet që janë ruajtur brenda tyre.
 - **Përmbajtja e fletoreve trajtohet si e pabesueshme.** HTML-ja e papërpunuar në

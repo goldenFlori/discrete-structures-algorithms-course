@@ -40,15 +40,16 @@ site/
 **Hapi 1** — kopjoni fletoren:
 
 ```
-site/content/notebooks/laborator-10.ipynb
+site/content/notebooks/laborator-11.ipynb
 ```
 
 **Hapi 2** — hapni `site/content/course.mjs` dhe shtoni në fund të listës `labs`:
 
 ```js
 {
-  n: 10,
-  week: 10,
+  n: 11,
+  week: 11,
+  lecture: 'Leksioni 7',                  // shfaqet si etiketë te laboratori
   status: 'published',
   title: 'Titulli i vërtetë i laboratorit',
   topics: ['grafe'],                      // id nga lista `topics` më lart
@@ -56,13 +57,32 @@ site/content/notebooks/laborator-10.ipynb
   resources: [
     {
       type: 'main',
-      title: 'Laboratori 10 — Materiali kryesor',
-      notebook: 'laborator-10.ipynb',
+      title: 'Laboratori 11 — Materiali kryesor',
+      notebook: 'laborator-11.ipynb',
       note: 'Çfarë përmban.',
     },
   ],
 },
 ```
+
+Shtojeni numrin e laboratorit edhe te blloku përkatës te `blocks` (në krye të skedarit),
+që të shfaqet në programin e faqes kryesore.
+
+**Hapi 2b — vizualizimet (opsionale, por e rekomanduar).** Te `embeds`, në fund të
+`course.mjs`, tregoni cili vizualizim shfaqet te cila qelizë e fletores (numri i qelizës
+nga 0, si në Jupyter):
+
+```js
+'laborator-11.ipynb': [
+  { cell: 4, viz: 'rrjedha-max', title: 'Rrjeti i ujit', props: { preset: 'qyteti' } },
+],
+```
+
+Nëse qeliza hap një dritare Pygame/Tkinter, vizualizimi shfaqet **në vend të saj** dhe kodi
+Python palohet poshtë tij. Për çdo qelizë tjetër, vizualizimi shfaqet pas saj. Lista e
+vizualizimeve dhe e opsioneve (`props`) është te `visualizers` dhe te komponentët në
+`site/src/viz/`. Gabimet, `SystemExit` dhe zhurma e Pygame-it në outpute hiqen vetë gjatë
+ndërtimit — fletorja juaj nuk ndryshon.
 
 **Hapi 3** — publikoni:
 
@@ -247,14 +267,21 @@ Për një laborator “së shpejti” mjaftojnë disa rreshta — pa fletore:
 
 ## 9 · Si të shtoj një vizualizues të ri interaktiv
 
-1. Krijoni `site/src/scripts/viz/emri.ts` (kopjoni një ekzistues si model —
-   të gjithë përdorin `Player` dhe `buildControls` nga `common.ts`).
-2. Regjistrojeni si custom element në fund të skedarit.
-3. Shtoni një hyrje te `visualizers` në `course.mjs`.
-4. Shtoni `id`-në e tij te `visualizers: [...]` i laboratorëve përkatës.
-5. Shtoni emrin e tag-ut te harta `TAG` në `site/src/pages/vizualizime/[id].astro`.
+Vizualizimet janë komponentë **React** me komponentët e **HeroUI**, te `site/src/viz/`.
 
-Vizualizuesi ngarkohet **vetëm** në faqen e vet — faqet e teorisë mbeten të lehta.
+1. Krijoni `site/src/viz/EmriViz.tsx`. Kopjoni një ekzistues si model: të gjithë
+   përdorin `VizShell`, `usePlayer` + `PlayerBar` (hapat) dhe `GraphCanvas` (grafet)
+   nga `site/src/viz/kit/`. Algoritmi shkruhet si funksion i pastër që kthen listën
+   e hapave, te `site/src/viz/algorithms/`.
+2. Shtoni një hyrje te `visualizers` në `course.mjs` (`id`, `component`, `title`, …).
+3. Te `site/src/components/VizEmbed.astro`: importojeni komponentin dhe shtoni një rresht
+   `{viz === 'id-ja' && <EmriViz client:visible={v} {...props} />}`.
+4. Zgjidhni një ikonë te `site/src/lib/icons.ts`.
+5. Vendoseni te laboratorët me `embeds` (shih seksionin 1).
+
+Çdo vizualizim ngarkohet vetëm kur studenti arrin te ai në faqe — faqet mbeten të shpejta.
+Mos përdorni `Math.random()` apo `toLocaleString()` gjatë renderimit të parë: faqja
+renderohet një herë në server dhe pastaj në shfletues, dhe rezultati duhet të jetë i njëjtë.
 
 ---
 
@@ -290,9 +317,11 @@ classroomUrl: 'https://classroom.google.com/c/…',   ← vendoseni këtë
 ```
 
 > **`classroomUrl` është bosh tani.** Sapo ta vendosni, butoni “Classroom”
-> shfaqet në shiritin e navigimit, te faqja e detyrave, te çdo laborator me
-> detyrë dhe te faqja e informacionit. Derisa të jetë bosh, ato butona fshihen
-> në vend që të çojnë diku të prishur.
+> shfaqet në shiritin e navigimit dhe në krye të çdo laboratori. Derisa të jetë
+> bosh, butoni fshihet në vend që të çojë diku të prishur.
+>
+> `repo` dhe `branch` përdoren për butonin **Hap në Google Colab** (vetëm për
+> fletoret pa Pygame/Tkinter, që punojnë në Colab).
 
 ---
 
@@ -317,8 +346,8 @@ Për të parë lokalisht saktësisht atë që do të shohin studentët:
 npm run build && npm run preview
 ```
 
-> Kërkimi funksionon vetëm pas `npm run build` — indeksi krijohet gjatë ndërtimit,
-> jo në `npm run dev`.
+> Kërkimi (⌘K) dhe grafikët Plotly funksionojnë edhe në `npm run dev`: indeksi i
+> kërkimit ndërtohet në memorie sapo niset serveri (`site/scripts/dev-extras.mjs`).
 
 ---
 
@@ -356,10 +385,12 @@ npm run build
 npm run qa
 ```
 
-`npm run qa` hap një shfletues të vërtetë dhe kontrollon 56 gjëra: ngarkimin e
-çdo faqeje, punën e të pesë vizualizuesve, kërkimin, shkarkimet, pamjen në
-celular, shkronjat shqipe, matematikën, dhe që materiali i papublikuar **nuk**
-është i arritshëm.
+`npm run qa` hap një shfletues të vërtetë dhe kontrollon rreth 80 gjëra: që çdo
+faqe ngarkohet pa gabime, që **çdo laborator ka vizualizimet e veta**, që asnjë
+gabim apo zhurmë nga fletoret (Traceback, SystemExit, Pygame) nuk shfaqet, që të
+13 vizualizimet reagojnë, kërkimin (⌘K), temën e errët, grafikët Plotly,
+matematikën, shkarkimet, pamjen në celular, dhe që materiali i papublikuar
+**nuk** është i arritshëm.
 
 Herën e parë mund t'ju duhet një shfletues për testim:
 
