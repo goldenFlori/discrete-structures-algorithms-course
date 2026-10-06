@@ -1,0 +1,7 @@
+# Zgjidhjet e ushtrimeve shtesë — vetëm për pedagogët, NUK publikohen në GitHub.
+zgjidhjet/
+
+# Editor and OS files
+.idea/
+.vscode/
+.DS_Store
