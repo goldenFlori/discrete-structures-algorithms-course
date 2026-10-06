@@ -303,6 +303,49 @@ function renderOutputs(outputs, cellFlags, assets) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Clean outputs                                                       */
+/*                                                                     */
+/* The site shows a clean lab, not a log of someone's Jupyter session. */
+/*  - Desktop programs (Pygame/Tkinter/launched scripts) and Jupyter    */
+/*    widgets keep no output at all: their interactive version is a web */
+/*    visualizer embedded on the page instead.                          */
+/*  - Errors, stderr, the Pygame start-up banner and the "⏳ pending"    */
+/*    lines of the self-check cells are dropped.                        */
+/* The .ipynb file itself is never modified.                           */
+/* ------------------------------------------------------------------ */
+const NOISE_LINE = [
+  /^pygame \d+\.\d+/,
+  /Hello from the pygame community/,
+  /^\s*⏳/,
+];
+
+function cleanOutputs(items, cf) {
+  if (isInteractiveCell(cf)) return [];
+  const out = [];
+  for (const o of items) {
+    if (o.kind === 'error' || o.kind === 'widget' || o.kind === 'inert-js') continue;
+    if (o.kind === 'stream') {
+      if (o.stream === 'stderr') continue;
+      const text = o.text
+        .split('\n')
+        .filter((l) => !NOISE_LINE.some((re) => re.test(l)))
+        .join('\n')
+        .replace(/^\n+|\s+$/g, '');
+      if (!text) continue;
+      out.push({ ...o, text });
+      continue;
+    }
+    out.push(o);
+  }
+  return out;
+}
+
+/** A cell whose real output is a desktop window or a live Jupyter widget. */
+function isInteractiveCell(cf) {
+  return cf.pygame || cf.tkinter || cf.subprocess || cf.widgets;
+}
+
+/* ------------------------------------------------------------------ */
 /* Main                                                                */
 /* ------------------------------------------------------------------ */
 
@@ -341,7 +384,7 @@ export async function renderNotebook(raw, { assets = new Map() } = {}) {
   let titleSeen = false;
   let totalCodeLines = 0;
 
-  for (const cell of cells) {
+  for (const [srcIndex, cell] of cells.entries()) {
     const source = src(cell);
 
     if (cell.cell_type === 'markdown') {
@@ -351,7 +394,7 @@ export async function renderNotebook(raw, { assets = new Map() } = {}) {
 
         if (sec.title === null) {
           const html = renderMarkdownBody(body);
-          if (html.trim()) rendered.push({ type: 'markdown', kind: 'normal', html });
+          if (html.trim()) rendered.push({ type: 'markdown', kind: 'normal', html, srcIndex });
           continue;
         }
 
@@ -361,7 +404,7 @@ export async function renderNotebook(raw, { assets = new Map() } = {}) {
           title = sec.title;
           titleSeen = true;
           const html = renderMarkdownBody(body);
-          if (html.trim()) rendered.push({ type: 'markdown', kind: 'normal', html });
+          if (html.trim()) rendered.push({ type: 'markdown', kind: 'normal', html, srcIndex, intro: true });
           continue;
         }
 
@@ -389,6 +432,7 @@ export async function renderNotebook(raw, { assets = new Map() } = {}) {
           level: sec.level,
           redundant,
           html,
+          srcIndex,
         });
       }
       continue;
@@ -410,6 +454,8 @@ export async function renderNotebook(raw, { assets = new Map() } = {}) {
 
     rendered.push({
       type: 'code',
+      srcIndex,
+      interactive: isInteractiveCell(cf),
       html: await codeToHtml(source, {
         lang: 'python',
         themes: { light: 'github-light', dark: 'github-dark' },
@@ -421,7 +467,7 @@ export async function renderNotebook(raw, { assets = new Map() } = {}) {
       summary: lines > COLLAPSE_OVER ? codeSummary(source) : [],
       flags: cf,
       externalScripts: cf.subprocess ? externalScripts(source) : [],
-      outputs: renderOutputs(cell.outputs, cf, assets),
+      outputs: cleanOutputs(renderOutputs(cell.outputs, cf, assets), cf),
     });
   }
 

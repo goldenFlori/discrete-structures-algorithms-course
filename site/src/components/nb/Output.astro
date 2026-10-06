@@ -1,0 +1,46 @@
+---
+/**
+ * One saved notebook output, already cleaned at build time (no errors,
+ * no stderr, no desktop-window noise). Plotly figures stay interactive.
+ */
+import { BarChart3, Terminal } from 'lucide-react';
+
+interface Props {
+  out: any;
+}
+const { out } = Astro.props;
+const base = import.meta.env.BASE_URL;
+---
+
+{
+  out.kind === 'stream' && (
+    <div class="overflow-hidden rounded-2xl border border-border bg-surface">
+      <div class="flex items-center gap-2 border-b border-separator px-4 py-1.5 text-[0.7rem] font-semibold tracking-wider text-muted uppercase">
+        <Terminal className="size-3.5" /> Rezultati
+      </div>
+      <pre class="overflow-x-auto px-4 py-3 font-mono text-[0.8rem] leading-relaxed text-foreground/90">{out.text}</pre>
+    </div>
+  )
+}
+{
+  out.kind === 'image' && (
+    <figure class="overflow-hidden rounded-2xl border border-border bg-white p-2 dark:bg-surface">
+      <img src={`${base}nb/${out.file}`} alt="Figura e prodhuar nga kodi i mësipërm" loading="lazy" decoding="async" class="mx-auto block h-auto max-w-full rounded-xl" />
+    </figure>
+  )
+}
+{
+  out.kind === 'plotly' && (
+    <div class="overflow-hidden rounded-2xl border border-border bg-surface">
+      <div class="flex items-center gap-2 border-b border-separator px-4 py-1.5 text-[0.7rem] font-semibold tracking-wider text-muted uppercase">
+        <BarChart3 className="size-3.5" /> Grafik interaktiv
+      </div>
+      <plotly-figure data-src={`${base}nb/${out.file}`} data-size={out.bytes}>
+        <noscript>
+          <p class="p-4 text-sm text-muted">Ky grafik kërkon JavaScript.</p>
+        </noscript>
+      </plotly-figure>
+    </div>
+  )
+}
+{out.kind === 'html' && <div class="nb-prose overflow-x-auto rounded-2xl border border-border bg-surface p-4" set:html={out.html} />}

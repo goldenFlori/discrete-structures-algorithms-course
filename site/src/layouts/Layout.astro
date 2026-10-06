@@ -1,0 +1,61 @@
+---
+import '../styles/app.css';
+import 'katex/dist/katex.min.css';
+import data from '../generated/course.json';
+import Nav from '../components/site/Nav.astro';
+import Footer from '../components/site/Footer.astro';
+import SearchPalette from '../components/site/SearchPalette';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Pagefind indexes only pages that opt in. */
+  indexable?: boolean;
+}
+
+const { title, description, indexable = true } = Astro.props;
+const { course } = data;
+const base = import.meta.env.BASE_URL;
+const fullTitle = title === course.title ? title : `${title} · ${course.title}`;
+const desc = description || course.description;
+---
+
+<!doctype html>
+<html lang="sq" class="light" data-theme="light" data-base={base}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={desc} />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f7f7fb" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#14141f" media="(prefers-color-scheme: dark)" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={desc} />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
+    <script is:inline>
+      // Applied before the first paint, so the theme never flashes.
+      (() => {
+        let t = 'system';
+        try {
+          t = localStorage.getItem('tema') || 'system';
+        } catch {}
+        const dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+        const r = document.documentElement;
+        r.classList.remove('light', 'dark');
+        r.classList.add(dark ? 'dark' : 'light');
+        r.dataset.theme = dark ? 'dark' : 'light';
+      })();
+    </script>
+  </head>
+  <body class="min-h-dvh">
+    <a href="#main" class="sr-only-focusable fixed top-3 left-3 z-[60] rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">Kalo te përmbajtja</a>
+    <Nav />
+    <main id="main" data-pagefind-body={indexable ? '' : undefined}>
+      <slot />
+    </main>
+    <Footer />
+    <SearchPalette client:idle base={base} />
+  </body>
+</html>

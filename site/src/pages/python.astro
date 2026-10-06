@@ -1,348 +1,168 @@
 ---
-import Base from '../layouts/Base.astro';
+import { AppWindow, ChevronDown, Cloud, Laptop, MonitorSmartphone, TriangleAlert, Wrench } from 'lucide-react';
+import Layout from '../layouts/Layout.astro';
 import data from '../generated/course.json';
 
-const base = import.meta.env.BASE_URL;
-const packages = data.packages as any[];
+const packages = (data.packages as any[]).filter((p) => p.pip);
+const pipLine = ['pip install', ...packages.map((p) => p.pip), 'jupyterlab'].join(' ');
 const labs = (data.labs as any[]).filter((l) => l.isPublic);
 
-// Only what the notebooks actually import. Nothing invented.
-const pipLine = packages.filter((p) => p.pip).map((p) => p.pip).join(' ');
-const ROLE: Record<string, { label: string; cls: string; note: string }> = {
-  desktop: { label: 'Vetëm desktop', cls: 'badge-warn', note: 'Hap dritare — nuk punon në Colab apo në shfletues' },
-  browser: { label: 'Punon kudo', cls: 'badge-ok', note: 'Punon në Jupyter lokal dhe në Colab' },
-  kernel: { label: 'Kërkon kernel', cls: 'badge-neutral', note: 'Kontrollet punojnë vetëm me kernel Jupyter aktiv' },
-  'stdlib-desktop': { label: 'Vjen me Python', cls: 'badge-neutral', note: 'Hap dritare desktop; në Linux mund të kërkojë python3-tk' },
-  bundled: { label: 'Vjen me Jupyter', cls: 'badge-neutral', note: 'Instalohet bashkë me Jupyter' },
-};
+const errors = [
+  {
+    q: "ModuleNotFoundError: No module named 'pygame'",
+    a: 'Paketa nuk është instaluar, ose Jupyter po përdor një Python tjetër. Ekzekutoni brenda një qelize të fletores:',
+    code: 'import sys\n!{sys.executable} -m pip install pygame',
+  },
+  {
+    q: 'pygame.error: video system not initialized',
+    a: 'Nuk ka ekran: kjo ndodh në Google Colab ose pasi kerneli u ristartua. Ekzekutojeni lokalisht dhe nisni qelizat nga fillimi. Në faqe, versioni interaktiv i ushtrimit punon pa Pygame.',
+  },
+  {
+    q: "NameError: name 'plt' is not defined (ose go, nx, np)",
+    a: 'Qelizat u ekzekutuan jashtë radhe. Provoni Run All nga fillimi; nëse mbetet, shtoni importin që mungon:',
+    code: 'import matplotlib.pyplot as plt\nimport plotly.graph_objects as go\nimport networkx as nx\nimport numpy as np',
+  },
+  {
+    q: 'Dritarja hapet, por ngrin',
+    a: 'Mos e ekzekutoni të njëjtën qelizë dy herë pa e mbyllur dritaren e parë. Mbylleni, pastaj Kernel → Restart dhe ekzekutoni sërish.',
+  },
+  {
+    q: "Linux: No module named 'tkinter'",
+    a: 'Tkinter vjen me Python, por në disa distribucione paketohet veçmas:',
+    code: 'sudo apt install python3-tk',
+  },
+];
 ---
 
-<Base
-  title="Python & Setup"
-  description="Çfarë të instaloni për laboratorët, si t'i hapni fletoret dhe si të zgjidhni gabimet e zakonshme."
->
-  <div class="page">
-    <header class="page-head">
-      <h1>Python &amp; Setup</h1>
-      <p class="lede">
-        Gjithçka që ju duhet për të hapur dhe ekzekutuar fletoret e kësaj lënde.
-        Lista e paketave është nxjerrë <strong>drejtpërdrejt nga importet</strong> e fletoreve —
-        asgjë nuk është shtuar "për çdo rast".
-      </p>
-    </header>
+<Layout title="Mjedisi i punës" description="Si t'i hapni dhe t'i ekzekutoni fletoret e laboratorit: Colab, Jupyter, VS Code.">
+  <section class="relative overflow-hidden">
+    <div class="bg-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_70%_80%_at_50%_0%,black,transparent)]"></div>
+    <div class="container-page relative pt-14 pb-6">
+      <p class="text-xs font-semibold tracking-wider text-accent uppercase">Python · Jupyter · Colab</p>
+      <h1 class="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl">Mjedisi i punës</h1>
+      <p class="mt-4 max-w-2xl text-lg text-muted">Gjithçka që ju duhet për të ekzekutuar fletoret e laboratorit — nga Google Colab pa instalim, te Jupyter në kompjuterin tuaj.</p>
+    </div>
+  </section>
 
-    {/* ----------------------------------------------------- quick start */}
-    <section id="fillimi" class="sec">
-      <h2>1 · Instalimi në tri hapa</h2>
-
-      <ol class="steps">
-        <li>
-          <h3>Instaloni Python</h3>
-          <p>
-            Shkarkoni Python 3.11 ose më të ri nga
-            <a href="https://www.python.org/downloads/" target="_blank" rel="noopener noreferrer">python.org/downloads</a>.
-          </p>
-          <p class="callout callout-warn" style="margin:.6rem 0 0">
-            <strong>Në Windows:</strong> gjatë instalimit shënoni kutinë
-            <em>“Add Python to PATH”</em>. Pa të, komandat më poshtë nuk do të funksionojnë.
-          </p>
-        </li>
-
-        <li>
-          <h3>Krijoni një mjedis të veçuar</h3>
-          <p>Kjo e mban lëndën të ndarë nga pjesa tjetër e sistemit tuaj.</p>
-          <div class="code-pair">
-            <div>
-              <h4>Windows</h4>
-              <pre><code>python -m venv .venv
-.venv\Scripts\activate</code></pre>
-            </div>
-            <div>
-              <h4>macOS / Linux</h4>
-              <pre><code>python3 -m venv .venv
-source .venv/bin/activate</code></pre>
-            </div>
-          </div>
-        </li>
-
-        <li>
-          <h3>Instaloni paketat</h3>
-          <p>Një komandë e vetme mbulon të gjithë laboratorët e publikuar:</p>
-          <pre class="cmd"><code>pip install {pipLine} jupyterlab</code></pre>
-          <p class="muted">
-            Nuk ju duhen të gjitha për çdo laborator — shihni tabelën më poshtë nëse doni
-            të instaloni vetëm ato që ju duhen tani.
-          </p>
-        </li>
-      </ol>
-    </section>
-
-    {/* -------------------------------------------------------- packages */}
-    <section id="paketat" class="sec">
-      <h2>2 · Çfarë kërkon secili laborator</h2>
-      <p class="muted">
-        Kjo tabelë gjenerohet automatikisht nga importet reale të fletoreve. Kur shtohet
-        një laborator i ri, ajo përditësohet vetë.
-      </p>
-
-      <div class="table-wrap">
-        <table class="pkg-table">
-          <thead>
-            <tr>
-              <th scope="col">Paketa</th>
-              <th scope="col">Për çfarë</th>
-              <th scope="col">Ku punon</th>
-              <th scope="col">Laboratorët</th>
-            </tr>
-          </thead>
-          <tbody>
-            {packages.map((p) => {
-              const role = ROLE[p.role] ?? ROLE.browser;
-              return (
-                <tr>
-                  <th scope="row"><code>{p.name}</code></th>
-                  <td>{p.label}</td>
-                  <td><span class={`badge ${role.cls}`} title={role.note}>{role.label}</span></td>
-                  <td class="c-labs">
-                    {p.labs.length
-                      ? p.labs.map((n: number) => (
-                          <a class="chip" href={`${base}laboratoret/${String(n).padStart(2, '0')}/`}>{String(n).padStart(2, '0')}</a>
-                        ))
-                      : <span class="muted">vetëm te detyrat</span>}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      <h3>Për çdo laborator veç e veç</h3>
-      <div class="lab-deps">
-        {labs.map((l) => (
-          <div class="dep-card">
-            <a href={`${base}laboratoret/${l.slug}/`}><strong>Lab {l.slug}</strong></a>
-            <code>{l.dependencies.length ? `pip install ${l.dependencies.join(' ')}` : 'asnjë paketë shtesë'}</code>
-            {(l.flags.pygame || l.flags.tkinter) && <span class="badge badge-warn">Dritare desktop</span>}
-          </div>
-        ))}
-      </div>
-    </section>
-
-    {/* ------------------------------------------------------- notebooks */}
-    <section id="hapja" class="sec">
-      <h2>3 · Si t'i hapni fletoret</h2>
-      <div class="grid grid-3">
-        <div class="card">
-          <h3>JupyterLab</h3>
-          <pre><code>jupyter lab</code></pre>
-          <p>Hapet në shfletues. Shkoni te dosja ku ruajtët <code>.ipynb</code> dhe klikojeni.</p>
-        </div>
-        <div class="card">
-          <h3>Jupyter Notebook</h3>
-          <pre><code>jupyter notebook</code></pre>
-          <p>Ndërfaqja klasike. Funksionon njësoj për të gjitha materialet e lëndës.</p>
-        </div>
-        <div class="card">
-          <h3>VS Code</h3>
-          <p>
-            Instaloni zgjerimin <em>Python</em> dhe <em>Jupyter</em>, pastaj hapni skedarin
-            <code>.ipynb</code> drejtpërdrejt. Zgjidhni mjedisin <code>.venv</code> si kernel.
-          </p>
-        </div>
-      </div>
-
-      <h3>Ekzekutimi i qelizave</h3>
-      <ul class="keys">
-        <li><kbd>Shift</kbd> + <kbd>Enter</kbd> — ekzekuto qelizën dhe kalo te tjetra</li>
-        <li><kbd>Ctrl</kbd> + <kbd>Enter</kbd> — ekzekuto qelizën dhe qëndro aty</li>
-        <li>Qelizat ekzekutohen <strong>me radhë</strong>: nëse një qelizë varet nga një e mëparshme, ekzekutoni fillimisht atë.</li>
-      </ul>
-    </section>
-
-    {/* -------------------------------------------------- desktop windows */}
-    <section id="dritaret-desktop" class="sec">
-      <h2>4 · Ushtrimet që hapin dritare (Pygame &amp; Tkinter)</h2>
-
-      <div class="callout callout-warn">
-        <p class="callout-title">Këto nuk punojnë në Google Colab</p>
-        <p style="margin:0">
-          Pjesa më e madhe e vizualizimeve në këtë lëndë hapin një dritare të vërtetë në
-          kompjuterin tuaj. Colab ekzekutohet në një server pa ekran, prandaj aty do të merrni
-          gabimin <code>pygame.error: video system not initialized</code> ose thjesht asgjë.
-          Ekzekutojini <strong>lokalisht</strong>.
+  <div class="container-page mt-8 grid gap-6">
+    <!-- Colab -->
+    <section class="grid grid-cols-1 gap-6 rounded-3xl border border-border bg-surface p-6 shadow-surface sm:p-8 lg:grid-cols-[auto_1fr]">
+      <span class="grid size-12 place-items-center rounded-2xl bg-accent-soft text-accent"><Cloud className="size-6" /></span>
+      <div>
+        <h2 class="text-xl font-bold tracking-tight">Më e shpejta: Google Colab</h2>
+        <p class="mt-2 text-muted">
+          Ushtrimet shtesë, Laboratori 10 dhe detyrat nuk kërkojnë Pygame: hapen me butonin <b class="text-foreground">Hap në Google Colab</b> në faqen e tyre
+          dhe punojnë menjëherë në shfletues, pa instaluar asgjë.
         </p>
       </div>
+    </section>
 
-      <h3>Si të punoni me to</h3>
-      <ol>
-        <li>Ekzekutoni qelizën. Dritarja hapet <strong>mbi ose pas</strong> shfletuesit — kërkojeni në shiritin e detyrave.</li>
-        <li>Përdorni tastet që përshkruan qeliza Markdown mbi kod (zakonisht <kbd>SPACE</kbd>, <kbd>R</kbd>, <kbd>Q</kbd>, shigjetat).</li>
-        <li>Mbylleni dritaren kur të keni mbaruar.</li>
+    <!-- Local install -->
+    <section class="rounded-3xl border border-border bg-surface p-6 shadow-surface sm:p-8">
+      <div class="flex items-center gap-3">
+        <span class="grid size-12 place-items-center rounded-2xl bg-accent-soft text-accent"><Laptop className="size-6" /></span>
+        <h2 class="text-xl font-bold tracking-tight">Në kompjuterin tuaj, në tri hapa</h2>
+      </div>
+      <ol class="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <li class="rounded-2xl bg-surface-secondary p-5">
+          <span class="font-mono text-xs font-bold text-accent">01</span>
+          <h3 class="mt-1 font-semibold">Instaloni Python</h3>
+          <p class="mt-2 text-sm text-muted">Python 3.11 ose më i ri nga <a class="text-accent underline underline-offset-2" href="https://www.python.org/downloads/" target="_blank" rel="noopener noreferrer">python.org</a>.</p>
+          <p class="mt-3 rounded-xl border border-warning/40 bg-warning-soft/50 p-3 text-xs"><b>Windows:</b> shënoni kutinë “Add Python to PATH” gjatë instalimit.</p>
+        </li>
+        <li class="rounded-2xl bg-surface-secondary p-5">
+          <span class="font-mono text-xs font-bold text-accent">02</span>
+          <h3 class="mt-1 font-semibold">Krijoni një mjedis të veçuar</h3>
+          <p class="mt-2 text-xs text-muted">Windows</p>
+          <pre class="mt-1 overflow-x-auto rounded-xl bg-[var(--code-bg)] p-3 font-mono text-xs">python -m venv .venv
+.venv\Scripts\activate</pre>
+          <p class="mt-3 text-xs text-muted">macOS / Linux</p>
+          <pre class="mt-1 overflow-x-auto rounded-xl bg-[var(--code-bg)] p-3 font-mono text-xs">python3 -m venv .venv
+source .venv/bin/activate</pre>
+        </li>
+        <li class="rounded-2xl bg-surface-secondary p-5">
+          <span class="font-mono text-xs font-bold text-accent">03</span>
+          <h3 class="mt-1 font-semibold">Instaloni paketat</h3>
+          <p class="mt-2 text-sm text-muted">Një komandë mbulon të gjithë laboratorët:</p>
+          <pre class="mt-2 overflow-x-auto rounded-xl bg-[var(--code-bg)] p-3 font-mono text-xs whitespace-pre-wrap">{pipLine}</pre>
+        </li>
       </ol>
+      <details class="group mt-6 rounded-2xl border border-border">
+        <summary class="flex cursor-pointer list-none items-center justify-between px-5 py-3.5 text-sm font-medium select-none [&::-webkit-details-marker]:hidden">
+          Çfarë kërkon secili laborator
+          <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
+        </summary>
+        <ul class="grid grid-cols-1 gap-2 border-t border-border p-4 sm:grid-cols-2">
+          {
+            labs.map((l) => (
+              <li class="flex items-center gap-3 rounded-xl bg-surface-secondary px-3 py-2">
+                <span class="font-mono text-xs font-bold text-accent">LAB {l.slug}</span>
+                <code class="min-w-0 flex-1 truncate font-mono text-xs">{l.dependencies.length ? `pip install ${l.dependencies.join(' ')}` : 'asnjë paketë shtesë'}</code>
+              </li>
+            ))
+          }
+        </ul>
+      </details>
+    </section>
 
-      <div class="callout callout-info">
-        <p class="callout-title">Gjurma <code>SystemExit</code> pas mbylljes është normale</p>
-        <p style="margin:0">
-          Kur mbyllni dritaren, Jupyter shpesh shfaq një <code>SystemExit</code> ose
-          “Kernel crashed”. <strong>Kjo nuk do të thotë se algoritmi dështoi</strong> — është
-          thjesht programi desktop që mbaron. Në këtë faqe ato gjurmë shfaqen si shënime
-          neutrale, jo si gabime.
+    <!-- Opening notebooks -->
+    <section class="grid grid-cols-1 gap-4 md:grid-cols-3">
+      {
+        [
+          { t: 'JupyterLab', c: 'jupyter lab', d: 'Hapet në shfletues. Gjeni skedarin .ipynb dhe klikojeni.' },
+          { t: 'Jupyter Notebook', c: 'jupyter notebook', d: 'Ndërfaqja klasike — funksionon njësoj për të gjitha materialet.' },
+          { t: 'VS Code', c: '', d: 'Instaloni zgjerimet Python dhe Jupyter, hapni .ipynb dhe zgjidhni .venv si kernel.' },
+        ].map((x) => (
+          <div class="rounded-3xl border border-border bg-surface p-6 shadow-surface">
+            <AppWindow className="size-5 text-accent" />
+            <h3 class="mt-3 font-semibold">{x.t}</h3>
+            {x.c && <pre class="mt-2 rounded-xl bg-[var(--code-bg)] p-2.5 font-mono text-xs">{x.c}</pre>}
+            <p class="mt-2 text-sm text-muted">{x.d}</p>
+          </div>
+        ))
+      }
+    </section>
+
+    <!-- Desktop windows -->
+    <section id="dritaret-desktop" class="grid grid-cols-1 gap-6 rounded-3xl border border-border bg-surface p-6 shadow-surface sm:p-8 lg:grid-cols-[auto_1fr]">
+      <span class="grid size-12 place-items-center rounded-2xl bg-warning-soft text-warning"><MonitorSmartphone className="size-6" /></span>
+      <div>
+        <h2 class="text-xl font-bold tracking-tight">Ushtrimet me dritare (Pygame & Tkinter)</h2>
+        <p class="mt-2 text-muted">
+          Disa ushtrime hapin një dritare të vërtetë në kompjuterin tuaj, prandaj nuk punojnë në Colab. Në faqe, secili prej tyre ka
+          <b class="text-foreground">versionin e vet interaktiv</b> në shfletues; kodi Python është i palosur poshtë tij.
         </p>
-      </div>
-
-      <p>
-        Nëse nuk arrini t'i ekzekutoni, të njëjtat algoritme ecin hap pas hapi te
-        <a href={`${base}vizualizime/`}>Vizualizimet</a>, drejtpërdrejt në shfletues.
-      </p>
-    </section>
-
-    {/* ---------------------------------------------------- common errors */}
-    <section id="gabimet" class="sec">
-      <h2>5 · Gabimet që do të hasni</h2>
-
-      <div class="errors">
-        <details class="err">
-          <summary><code>ModuleNotFoundError: No module named 'pygame'</code></summary>
-          <p>
-            Paketa nuk është instaluar, ose Jupyter po përdor një Python tjetër nga ai ku e instaluat.
-            Ekzekutoni brenda një qelize të vetë fletores:
-          </p>
-          <pre><code>import sys
-!{'{sys.executable}'} -m pip install pygame</code></pre>
-          <p class="muted">Kjo instalon gjithmonë në të njëjtin Python që po përdor fletorja.</p>
-        </details>
-
-        <details class="err">
-          <summary><code>pygame.error: video system not initialized</code></summary>
-          <p>
-            Nuk ka ekran në dispozicion. Kjo ndodh në Google Colab, në një server, ose kur kerneli
-            u ristartua pasi mbyllët dritaren. Ekzekutojeni lokalisht dhe ri-ekzekutoni qelizën nga fillimi.
-          </p>
-        </details>
-
-        <details class="err">
-          <summary><code>NameError: name 'plt' is not defined</code> (ose <code>go</code>, <code>nx</code>, <code>np</code>)</summary>
-          <p>
-            Qeliza përdor një bibliotekë që nuk e ka importuar, ose ju ekzekutuat qelizat jashtë radhe.
-            Së pari provoni <em>Run All</em> nga fillimi. Nëse gabimi mbetet, shtoni importin që mungon:
-          </p>
-          <pre><code>import matplotlib.pyplot as plt
-import plotly.graph_objects as go
-import networkx as nx
-import numpy as np</code></pre>
-        </details>
-
-        <details class="err">
-          <summary>Dritarja hapet, por ngrin ose nuk përgjigjet</summary>
-          <p>
-            Mos e ekzekutoni të njëjtën qelizë dy herë pa e mbyllur dritaren e parë. Mbyllni dritaren,
-            pastaj <em>Kernel → Restart</em> dhe ekzekutojeni sërish.
-          </p>
-        </details>
-
-        <details class="err">
-          <summary>Butonat e një ushtrimi nuk reagojnë (ipywidgets)</summary>
-          <p>
-            Kontrollet <code>ipywidgets</code> kërkojnë një kernel aktiv. Ato nuk funksionojnë
-            në një fletore të ruajtur, as në këtë faqe. Instaloni dhe ekzekutoni lokalisht:
-          </p>
-          <pre><code>pip install ipywidgets</code></pre>
-        </details>
-
-        <details class="err">
-          <summary>Në Linux: <code>ModuleNotFoundError: No module named 'tkinter'</code></summary>
-          <p>Tkinter vjen me Python, por në disa distribucione paketohet veçmas:</p>
-          <pre><code>sudo apt install python3-tk</code></pre>
-        </details>
+        <ol class="mt-4 list-decimal space-y-1.5 pl-5 text-sm text-muted">
+          <li>Ekzekutoni qelizën; dritarja hapet mbi ose pas shfletuesit.</li>
+          <li>Përdorni tastet që përshkruan teksti mbi kod (zakonisht SPACE, R, Q, shigjetat).</li>
+          <li>Mbylleni dritaren kur të mbaroni. Një <code class="font-mono">SystemExit</code> pas mbylljes është normal.</li>
+        </ol>
       </div>
     </section>
 
-    <section class="sec">
-      <h2>Ende nuk funksionon?</h2>
-      <p>
-        Shkruani në Google Classroom duke përfshirë: sistemin tuaj operativ, laboratorin,
-        numrin e ushtrimit dhe <strong>tekstin e plotë të gabimit</strong>. Kjo e bën zgjidhjen
-        shumë më të shpejtë sesa “nuk më punon”.
-      </p>
+    <!-- Errors -->
+    <section class="rounded-3xl border border-border bg-surface p-6 shadow-surface sm:p-8">
+      <div class="flex items-center gap-3">
+        <span class="grid size-12 place-items-center rounded-2xl bg-danger-soft text-danger"><TriangleAlert className="size-6" /></span>
+        <h2 class="text-xl font-bold tracking-tight">Gabimet që do të hasni</h2>
+      </div>
+      <div class="mt-6 divide-y divide-separator rounded-2xl border border-border">
+        {
+          errors.map((e) => (
+            <details class="group">
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 select-none [&::-webkit-details-marker]:hidden">
+                <code class="font-mono text-sm">{e.q}</code>
+                <ChevronDown className="size-4 shrink-0 text-muted transition-transform group-open:rotate-180" />
+              </summary>
+              <div class="px-5 pb-5 text-sm text-muted">
+                <p>{e.a}</p>
+                {e.code && <pre class="mt-3 overflow-x-auto rounded-xl bg-[var(--code-bg)] p-3 font-mono text-xs text-foreground">{e.code}</pre>}
+              </div>
+            </details>
+          ))
+        }
+      </div>
+      <p class="mt-5 flex items-center gap-2 text-sm text-muted"><Wrench className="size-4" /> Ende nuk funksionon? Sillni kompjuterin në orën e laboratorit — e zgjidhim bashkë.</p>
     </section>
   </div>
-</Base>
-
-<style>
-  .page { padding: 2rem 0 3rem; max-width: 900px; }
-  .page-head { max-width: 720px; margin-bottom: 1rem; }
-  .lede { color: var(--ink-2); font-size: 1.02rem; }
-
-  .sec { margin-top: 3rem; scroll-margin-top: calc(var(--nav-h) + 20px); }
-  .sec > h2 {
-    font-size: 1.15rem; margin: 0 0 .8rem;
-    padding-bottom: .5rem; border-bottom: 1px solid var(--border);
-  }
-  .sec h3 { font-size: 1rem; margin-top: 1.8rem; }
-  .sec p, .sec li { max-width: var(--measure); }
-
-  .steps { list-style: none; padding: 0; counter-reset: s; }
-  .steps > li {
-    counter-increment: s; position: relative;
-    padding-left: 2.6rem; margin: 0 0 2rem;
-  }
-  .steps > li::before {
-    content: counter(s);
-    position: absolute; left: 0; top: .1rem;
-    width: 30px; height: 30px; display: grid; place-items: center;
-    border-radius: 50%; background: var(--accent); color: #fff;
-    font: 700 .85rem/1 var(--font-mono);
-  }
-  .steps h3 { margin: .2rem 0 .5rem; font-size: 1.02rem; }
-
-  pre {
-    margin: .6rem 0; padding: .75em 1em; overflow-x: auto;
-    background: var(--code-bg); border: 1px solid var(--code-border);
-    border-radius: var(--radius-sm);
-    font-family: var(--font-mono); font-size: .84rem; line-height: 1.6;
-  }
-  pre.cmd { background: var(--accent-soft); border-color: var(--accent-line); }
-  pre code { background: none; border: 0; padding: 0; }
-
-  .code-pair { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-  .code-pair h4 { margin: 0; font-size: .74rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
-
-  .table-wrap { position: relative; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
-  .pkg-table { min-width: 620px; }
-  .pkg-table th[scope='row'] { background: transparent; }
-  .pkg-table td { vertical-align: middle; }
-  .c-labs { display: flex; flex-wrap: wrap; gap: .25rem; }
-  .c-labs .chip { font-family: var(--font-mono); font-size: .72rem; text-decoration: none; }
-
-  .lab-deps { display: grid; gap: .5rem; }
-  .dep-card {
-    display: flex; flex-wrap: wrap; align-items: center; gap: .7rem;
-    padding: .55rem .8rem; border: 1px solid var(--border);
-    border-radius: var(--radius-sm); background: var(--surface);
-  }
-  .dep-card a { text-decoration: none; flex: none; min-width: 4.5rem; }
-  .dep-card code { font-size: .8rem; flex: 1; min-width: 200px; }
-
-  .keys { list-style: none; padding: 0; }
-  .keys li { margin: .5em 0; }
-  kbd {
-    font-family: var(--font-mono); font-size: .8em;
-    padding: .15em .45em; border: 1px solid var(--border-strong);
-    border-bottom-width: 2px; border-radius: 4px; background: var(--surface-2);
-  }
-
-  .errors { display: grid; gap: .5rem; }
-  .err { border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); }
-  .err > summary {
-    cursor: pointer; padding: .75em 1em; font-size: .9rem;
-    list-style: none; display: flex; align-items: center; gap: .5rem;
-  }
-  .err > summary::-webkit-details-marker { display: none; }
-  .err > summary::before { content: '▸'; color: var(--ink-faint); flex: none; }
-  .err[open] > summary::before { content: '▾'; }
-  .err > summary:hover { background: var(--surface-2); }
-  .err > summary code { font-size: .82em; }
-  .err > :not(summary) { margin-left: 1em; margin-right: 1em; }
-  .err > :last-child { margin-bottom: 1em; }
-</style>
+</Layout>
