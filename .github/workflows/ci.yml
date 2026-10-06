@@ -1,0 +1,41 @@
+# Kontrollon çdo pull request para se të bashkohet në main:
+# instalim i pastër, ndërtim i faqes dhe testet në shfletues (npm run qa).
+name: Kontrolli
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: site/.nvmrc
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Instalo varësitë
+        run: npm ci
+
+      - name: Ndërto faqen
+        run: npm run build
+
+      - name: Instalo shfletuesin e testeve
+        run: npx playwright install --with-deps chromium
+
+      - name: Testet në shfletues
+        run: npm run qa
