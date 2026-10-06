@@ -334,7 +334,10 @@ STRUKTURA DISKRETE & ALGORITME  ·  Viti I  ·  Shkenca të të Dhënave & Inxhi
 
 ## C. AMBIGUITIES — paqartësi dhe vendime
 
-### C-1 · `NameError` i ruajtur në Laboratorin 1 ⚠ PROBLEM AKADEMIK
+### C-1 · `NameError` i ruajtur në Laboratorin 1 ✅ KORRIGJUAR
+> **Përditësim:** Ushtrimi 2 u rishkrua në Plotly (siç e kërkonte komenti i tij) dhe u ri-ekzekutua;
+> grafiku tani shfaqet interaktiv në faqe. Shih `MANIFEST.json` dhe `docs/LEKSIONET-DHE-LABORATORET.md`.
+
 Qeliza 2 e `Laborator1.ipynb` importon `plotly.graph_objects` por thërret `plt.subplots()`.
 Outputi i ruajtur është `NameError: name 'plt' is not defined` — pra ky ushtrim **nuk prodhoi kurrë grafik**.
 **Veprimi:** *raportuar, jo i korrigjuar.* Faqja e shfaq qelizën normalisht dhe e shënon gabimin
@@ -391,6 +394,8 @@ Sufiksi ` (1)` = shkarkim i dyfishtë i shfletuesit, **jo** version i dytë (nuk
 Trajtohen si materiali i vetëm dhe zyrtar i Lab 2 / Lab 3.
 
 ### C-10 · Labs 10–15 nuk ekzistojnë
+> **Përditësim:** Laboratori 10 (Aplikime të rrjedhës max — Leksionet 5–6, slides 80–90) u shtua.
+
 Rreth 15 laboratorë priten; 9 janë dorëzuar. **Asnjë përmbajtje nuk u shpik.**
 Sistemi mbështet statusin `coming-soon` dhe një lab i ri kërkon 1 skedar + 1 hyrje metadata.
 

@@ -2,8 +2,9 @@
   {
     "origjinali": "Laborator1.ipynb",
     "publikuar": "laborator-01.ipynb",
-    "sha256": "a98e9eefc4a3a989389989236acf6a45b6e057a65c2d75f34df7b41d295c2f3a",
-    "identik": true
+    "sha256": "6e0791651fe1a90ba7470cfdfd7221ca3c818970c26a95c1235dfe2c3a33651b",
+    "identik": false,
+    "ndryshimi": "Ushtrimi 2 u rishkrua në Plotly (korrigjon NameError, C-1), me listë parazgjedhje 200 elemente që trendi të duket; outputi u rigjenerua."
   },
   {
     "origjinali": "Laborator2 (1).ipynb",
@@ -38,14 +39,16 @@
   {
     "origjinali": "Laborator8.ipynb",
     "publikuar": "laborator-08.ipynb",
-    "sha256": "27083de192530e879be2cc093553979d725a9825287aa449165049c1a0db536c",
-    "identik": true
+    "sha256": "e03d77b04658fb6bdc540477439cb9b3c6cd24b0fdb186540b927f9fbfc2de7b",
+    "identik": false,
+    "ndryshimi": "U shtua një shënim për konventën e antisimetrisë kundrejt përkufizimit të leksionit (Leksionet 5–6)."
   },
   {
     "origjinali": "Laborator9.ipynb",
     "publikuar": "laborator-09.ipynb",
-    "sha256": "dbcdc65580ea42a83231db1030895c0473ec027a514ad60ea85f3f36697ac116",
-    "identik": true
+    "sha256": "46c6c54177912e97f1bd1c215f269d7923edaac4def6253ffb79cd0b3cd240c4",
+    "identik": false,
+    "ndryshimi": "\"kulm (sink)\" → \"derdhje (sink)\" sipas terminologjisë së leksionit; shënim për antisimetrinë."
   },
   {
     "origjinali": "dijkstra_animated.ipynb",
@@ -82,5 +85,47 @@
     "publikuar": "arkiv/laborator-05-version-i-meparshem.ipynb",
     "sha256": "3639184b2e0b8d5a1e1ba0ec6235104df76bd90dbb9a02e3482e7a23a67c5eab",
     "identik": true
+  },
+  {
+    "origjinali": null,
+    "publikuar": "laborator-01-ushtrime-shtese.ipynb",
+    "sha256": "79d2655b43e04dc78e13d0c62168478bfb66c2c0bb920c6257b7b7609dcb0b7b",
+    "identik": null,
+    "ndryshimi": "Fletore e re, e ndërtuar sipas Leksioni 1 të materials/Leksione-Slides."
+  },
+  {
+    "origjinali": null,
+    "publikuar": "laborator-02-ushtrime-shtese.ipynb",
+    "sha256": "386ef70a357cf7c83a57aba8418226161255ccce62c248421b54340d95f1bbdd",
+    "identik": null,
+    "ndryshimi": "Fletore e re, e ndërtuar sipas Leksioni 2–3 të materials/Leksione-Slides."
+  },
+  {
+    "origjinali": null,
+    "publikuar": "laborator-03-ushtrime-shtese.ipynb",
+    "sha256": "3091b380530a33dc3d88fe417edd0c35a9e1de581756f9bcd38e736fcfcd9506",
+    "identik": null,
+    "ndryshimi": "Fletore e re, e ndërtuar sipas Leksioni 3 të materials/Leksione-Slides."
+  },
+  {
+    "origjinali": null,
+    "publikuar": "laborator-04-ushtrime-shtese.ipynb",
+    "sha256": "7a01329919cb3fcd9965bf74e1a3bbc67e67eba5e4d2943865fe9886d3ed66e1",
+    "identik": null,
+    "ndryshimi": "Fletore e re, e ndërtuar sipas Leksioni 4 të materials/Leksione-Slides."
+  },
+  {
+    "origjinali": null,
+    "publikuar": "laborator-09-ushtrime-shtese.ipynb",
+    "sha256": "101871ee7c8d0abb663f0f432f5424ab742915db70876886cd3e7338b048b11d",
+    "identik": null,
+    "ndryshimi": "Fletore e re, e ndërtuar sipas Leksionet 5–6 të materials/Leksione-Slides."
+  },
+  {
+    "origjinali": null,
+    "publikuar": "laborator-10.ipynb",
+    "sha256": "24c4e84c9bf9125b7f69b7f6505e98da656a97b964cb574647094f305e3c93ad",
+    "identik": null,
+    "ndryshimi": "Fletore e re, e ndërtuar sipas Leksionet 5–6 (aplikimet) të materials/Leksione-Slides."
   }
 ]
