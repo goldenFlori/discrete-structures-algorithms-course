@@ -1,310 +1,235 @@
 ---
-import Base from '../layouts/Base.astro';
+import { ArrowRight, BookOpenCheck, Download, MousePointerClick, Play, Sparkles } from 'lucide-react';
+import Layout from '../layouts/Layout.astro';
+import LabCard from '../components/LabCard.astro';
+import HeroVisual from '../components/HeroVisual.astro';
 import data from '../generated/course.json';
-import notebooks from '../generated/notebooks.json';
+import { BLOCK_COLOR, BLOCK_ICON, VIZ_ICON } from '../lib/icons';
 
 const base = import.meta.env.BASE_URL;
 const { course } = data;
-const labs = data.labs as any[];
-const published = labs.filter((l) => l.isPublic);
-const latest = published[published.length - 1];
-const previous = published[published.length - 2];
-const nbs = notebooks as Record<string, any>;
-
-const topicName = (id: string) => (data.topics as any[]).find((t) => t.id === id)?.name || id;
-const latestMain = latest?.resources.find((r: any) => r.type === 'main' && r.available);
-
-// Homework a student can still act on, newest first.
-const allHomework = [
-  ...(data.homework as any[]).map((h) => ({ kind: 'standalone' as const, lab: h.lab, title: h.title, href: `${base}detyrat/${h.id}/` })),
-  ...labs.filter((l) => l.isPublic).flatMap((l) =>
-    l.homeworkEmbedded.map((h: any) => ({ kind: 'embedded' as const, lab: l.n, title: h.title, href: `${base}laboratoret/${l.slug}/#${h.anchor}` })),
-  ),
-].sort((a, b) => b.lab - a.lab);
-
+const labs = (data.labs as any[]).filter((l) => l.isPublic);
+const latest = labs.find((l) => l.n === data.latestLab) ?? labs[labs.length - 1];
+const blocks = data.blocks as any[];
 const viz = data.visualizers as any[];
+const blockOf = (n: number) => blocks.find((b) => b.labs.includes(n))?.id ?? 'renditja';
+const embedCount = labs.reduce((s, l) => s + l.viz.length, 0);
+const latestViz = (latest?.viz ?? []) as any[];
+const vizMeta = (id: string) => viz.find((v) => v.id === id);
 ---
 
-<Base title={course.title} description={course.description}>
-  <div class="home">
-    {/* ------------------------------------------------------ intro */}
-    <header class="hero">
-      <p class="hero-eyebrow">
-        {course.program} · {course.year}
-        {course.faculty && <> · {course.faculty}</>}
-      </p>
-      <h1>{course.title}</h1>
-      <p class="hero-lede">{course.description}</p>
-      <div class="hero-actions no-print">
-        <a class="btn btn-primary" href={`${base}laboratoret/`}>Të gjithë laboratorët</a>
-        <a class="btn" href={`${base}python/`}>Përgatit mjedisin Python</a>
-        {course.classroomUrl && (
-          <a class="btn" href={course.classroomUrl} target="_blank" rel="noopener noreferrer">Google Classroom ↗</a>
-        )}
-      </div>
-    </header>
+<Layout title={course.title}>
+  <!-- ============================================================ HERO -->
+  <section class="relative overflow-hidden">
+    <div class="bg-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_75%_65%_at_50%_0%,black,transparent)]"></div>
+    <div
+      class="pointer-events-none absolute -top-48 left-1/2 h-[620px] w-[1200px] -translate-x-1/2"
+      style="background: radial-gradient(closest-side at 35% 50%, var(--glow-1), transparent), radial-gradient(closest-side at 70% 45%, var(--glow-2), transparent)"
+    >
+    </div>
 
-    {/* ---------------------------------------------- current lab */}
-    {latest && (
-      <section class="current" aria-labelledby="current-title">
-        <div class="current-flag">
-          <span class="pulse" aria-hidden="true"></span>
-          <span id="current-title">Laboratori aktual</span>
-        </div>
-        <div class="current-card">
-          <div class="current-main">
-            <div class="current-top">
-              <span class="current-n">Laboratori {latest.slug}</span>
-              {latest.week && <span class="muted">Java {latest.week}</span>}
-            </div>
-            <h2>{latest.title}</h2>
-            {latest.summary && <p class="current-summary">{latest.summary}</p>}
-            <div class="current-chips">
-              {(latest.topics || []).map((t: string) => <span class="chip">{topicName(t)}</span>)}
-            </div>
-            <div class="current-actions no-print">
-              <a class="btn btn-primary" href={`${base}laboratoret/${latest.slug}/`}>Hap laboratorin</a>
-              {latestMain && (
-                <a class="btn" href={`${base}shkarkime/${latestMain.notebook}`} download>Shkarko fletoren</a>
-              )}
-            </div>
-          </div>
-          <dl class="current-facts">
-            {latestMain && (
-              <div>
-                <dt>Materiali</dt>
-                <dd>{nbs[latestMain.notebook].stats.code} qeliza kodi, {nbs[latestMain.notebook].stats.markdown} seksione teorie</dd>
-              </div>
-            )}
-            {latest.dependencies.length > 0 && (
-              <div>
-                <dt>Ju duhet</dt>
-                <dd class="mono">{latest.dependencies.join(' · ')}</dd>
-              </div>
-            )}
-            <div>
-              <dt>Detyrë shtëpie</dt>
-              <dd>
-                {latest.homeworkEmbedded.length > 0
-                  ? <a href={`${base}laboratoret/${latest.slug}/#detyra`}>Po — brenda fletores</a>
-                  : latest.homeworkStandalone.length > 0
-                    ? <a href={`${base}detyrat/`}>Po — fletore më vete</a>
-                    : 'Jo për këtë laborator'}
-              </dd>
-            </div>
-            {(latest.visualizers || []).length > 0 && (
-              <div>
-                <dt>Vizualizim</dt>
-                <dd><a href={`${base}laboratoret/${latest.slug}/#vizualizime`}>Po — {latest.visualizers.length} interaktivë</a></dd>
-              </div>
-            )}
-          </dl>
-        </div>
-        {previous && (
-          <p class="current-prev">
-            Javën e kaluar: <a href={`${base}laboratoret/${previous.slug}/`}>Laboratori {previous.slug} — {previous.title}</a>
-          </p>
-        )}
-      </section>
-    )}
-
-    {/* ------------------------------------------------- shortcuts */}
-    <section class="shortcuts" aria-label="Shkurtore">
-      <a class="sc card card-link" href={`${base}laboratoret/`}>
-        <span class="sc-n mono">{published.length}</span>
-        <strong>Laboratorë</strong>
-        <small>Materiali kryesor, plotësues, punë në klasë dhe shkarkime — të gjitha bashkë.</small>
-      </a>
-      <a class="sc card card-link" href={`${base}detyrat/`}>
-        <span class="sc-n mono">{allHomework.length}</span>
-        <strong>Detyra Shtëpie</strong>
-        <small>I gjithë semestri në një listë, pa kërkuar nëpër postime të vjetra.</small>
-      </a>
-      <a class="sc card card-link" href={`${base}vizualizime/`}>
-        <span class="sc-n mono">{viz.length}</span>
-        <strong>Vizualizime</strong>
-        <small>Algoritmet e lëndës, hap pas hapi, drejtpërdrejt në shfletues.</small>
-      </a>
-      <a class="sc card card-link" href={`${base}python/`}>
-        <span class="sc-n mono" aria-hidden="true">Py</span>
-        <strong>Python &amp; Setup</strong>
-        <small>Çfarë të instaloni, si t'i hapni fletoret, dhe gabimet e zakonshme.</small>
-      </a>
-    </section>
-
-    {/* ---------------------------------------------------- timeline */}
-    <section class="section">
-      <div class="section-head">
-        <h2>Rrjedha e semestrit</h2>
-        <a class="section-more no-print" href={`${base}laboratoret/`}>Të gjithë →</a>
-      </div>
-      <ol class="mini-timeline">
-        {published.map((l) => (
-          <li>
-            <a href={`${base}laboratoret/${l.slug}/`} class={l.n === latest?.n ? 'is-current' : ''}>
-              <span class="mt-n mono">{l.slug}</span>
-              <span class="mt-title">{l.title}</span>
-              {l.n === latest?.n && <span class="badge badge-accent">Aktual</span>}
-            </a>
-          </li>
-        ))}
-      </ol>
-    </section>
-
-    {/* ---------------------------------------------------- homework */}
-    {allHomework.length > 0 && (
-      <section class="section">
-        <div class="section-head">
-          <h2>Detyrat e shtëpisë</h2>
-          <a class="section-more no-print" href={`${base}detyrat/`}>Të gjitha →</a>
-        </div>
-        <ul class="hw-mini">
-          {allHomework.slice(0, 4).map((h) => (
-            <li>
-              <a href={h.href}>
-                <span class="hw-lab mono">Lab {String(h.lab).padStart(2, '0')}</span>
-                <span class="hw-title">{h.title}</span>
-                <span class={`badge ${h.kind === 'embedded' ? 'badge-danger' : 'badge-accent'}`}>
-                  {h.kind === 'embedded' ? 'Brenda labit' : 'Fletore më vete'}
-                </span>
+    <div class="container-page relative grid grid-cols-1 items-center gap-12 pt-14 pb-16 lg:grid-cols-[1.05fr_1fr] lg:pt-20 lg:pb-24">
+      <div class="animate-fade-up">
+        <span class="inline-flex items-center gap-2 rounded-full border border-border bg-surface/70 px-3 py-1 text-xs font-medium text-muted backdrop-blur">
+          <span class="size-1.5 rounded-full bg-success"></span>
+          {course.year} · {course.program}
+        </span>
+        <h1 class="mt-5 text-[2.6rem] leading-[1.04] font-extrabold tracking-tight text-balance sm:text-6xl">
+          Struktura Diskrete <span class="text-gradient">&amp; Algoritme</span>
+        </h1>
+        <p class="mt-5 max-w-xl text-lg leading-relaxed text-muted">
+          Laboratorët e lëndës në një vend: teoria, ushtrimet dhe <strong class="font-semibold text-foreground">{viz.length} vizualizime interaktive</strong> që
+          punojnë direkt në shfletues — nga renditja dhe Big-O te grafet, rrugët më të shkurtra dhe rrjedhat maksimale.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          {
+            latest && (
+              <a href={`${base}laboratoret/${latest.slug}/`} class="button button--lg button--primary gap-2">
+                <Play className="size-4" /> Laboratori {latest.n}
               </a>
-            </li>
-          ))}
-        </ul>
-        {course.classroomUrl && (
-          <p class="muted" style="font-size:.88rem;margin-top:.8rem">
-            Dorëzimi dhe njoftimet mbeten në
-            <a href={course.classroomUrl} target="_blank" rel="noopener noreferrer"> Google Classroom</a>.
-          </p>
-        )}
-      </section>
-    )}
-
-    {/* -------------------------------------------------- visualizers */}
-    <section class="section no-print">
-      <div class="section-head">
-        <h2>Vizualizime interaktive</h2>
-        <a class="section-more" href={`${base}vizualizime/`}>Të gjitha →</a>
-      </div>
-      <div class="grid grid-2">
-        {viz.slice(0, 4).map((v) => (
-          <a class="card card-link viz" href={`${base}vizualizime/${v.id}/`}>
-            <strong>{v.title}</strong>
-            <span class="viz-tag mono">{v.tagline}</span>
-            <small class="muted">{v.summary}</small>
-            <span class="viz-labs">
-              {v.labs.map((n: number) => <span class="chip">Lab {String(n).padStart(2, '0')}</span>)}
-            </span>
+            )
+          }
+          <a href={`${base}laboratoret/`} class="button button--lg button--secondary gap-2">
+            Të gjithë laboratorët <ArrowRight className="size-4" />
           </a>
-        ))}
+        </div>
+        <dl class="mt-10 grid max-w-lg grid-cols-3 gap-3">
+          {
+            [
+              [labs.length, 'laboratorë'],
+              [viz.length, 'vizualizime'],
+              [embedCount, 'ushtrime interaktive'],
+            ].map(([n, l]) => (
+              <div class="rounded-2xl border border-border bg-surface/70 px-4 py-3 backdrop-blur">
+                <dt class="sr-only">{l}</dt>
+                <dd class="font-mono text-2xl font-bold tracking-tight">{n}</dd>
+                <dd class="text-xs text-muted">{l}</dd>
+              </div>
+            ))
+          }
+        </dl>
       </div>
-    </section>
 
-    {/* ------------------------------------------------------ topics */}
-    <section class="section">
-      <div class="section-head"><h2>Temat kryesore</h2></div>
-      <div class="topic-row">
-        {(data.topics as any[]).map((t) => {
-          const ls = published.filter((l) => (l.topics || []).includes(t.id));
-          if (!ls.length) return null;
+      <div class="relative animate-fade-up [animation-delay:120ms]">
+        <div class="relative rounded-[2rem] border border-border bg-surface/80 p-4 shadow-[0_30px_80px_-30px_color-mix(in_oklab,var(--brand)_45%,transparent)] backdrop-blur sm:p-6">
+          <div class="mb-2 flex items-center gap-1.5">
+            <span class="size-2.5 rounded-full bg-danger/70"></span>
+            <span class="size-2.5 rounded-full bg-warning/70"></span>
+            <span class="size-2.5 rounded-full bg-success/70"></span>
+            <span class="ml-3 font-mono text-xs text-muted">dijkstra(A) · bfs · max-flow</span>
+          </div>
+          <HeroVisual />
+        </div>
+        <span class="glass animate-float absolute -top-4 -left-3 hidden rounded-2xl border border-border px-3.5 py-2 font-mono text-sm font-semibold shadow-lg sm:block">
+          dist(A, H) = <span class="text-accent">8</span>
+        </span>
+        <span class="glass animate-float absolute -right-2 bottom-10 hidden rounded-2xl border border-border px-3.5 py-2 font-mono text-sm font-semibold shadow-lg [animation-delay:-3s] sm:block">
+          O(n log n)
+        </span>
+        <span class="glass animate-float absolute -bottom-5 left-10 hidden rounded-2xl border border-border px-3.5 py-2 font-mono text-sm font-semibold shadow-lg [animation-delay:-1.5s] sm:block">
+          max-flow = <span class="text-success">min-cut</span>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== CURRENT LAB -->
+  {
+    latest && (
+      <section class="container-page">
+        <div class="relative overflow-hidden rounded-[2rem] border border-border bg-surface p-6 shadow-surface sm:p-10">
+          <div class="pointer-events-none absolute -top-40 -right-40 size-[30rem]" style="background: radial-gradient(closest-side, var(--glow-1), transparent)" />
+          <div class="relative grid grid-cols-1 gap-8 lg:grid-cols-[1.3fr_1fr] lg:items-center">
+            <div>
+              <p class="text-xs font-semibold tracking-wider text-accent uppercase">Laboratori i javës · Java {latest.week}</p>
+              <h2 class="mt-3 text-3xl font-bold tracking-tight text-balance">{latest.title}</h2>
+              <p class="mt-3 max-w-2xl text-muted">{latest.summary}</p>
+              <div class="mt-6 flex flex-wrap gap-3">
+                <a href={`${base}laboratoret/${latest.slug}/`} class="button button--primary gap-2">
+                  Hap laboratorin <ArrowRight className="size-4" />
+                </a>
+                {latest.resources[0] && (
+                  <a href={`${base}shkarkime/${latest.resources[0].notebook}`} download class="button button--tertiary gap-2">
+                    <Download className="size-4" /> Fletorja .ipynb
+                  </a>
+                )}
+              </div>
+            </div>
+            <ul class="grid gap-2">
+              {latestViz.slice(0, 4).map((v) => {
+                const Icon = VIZ_ICON[v.viz];
+                const m = vizMeta(v.viz);
+                return (
+                  <li>
+                    <a href={`${base}laboratoret/${latest.slug}/#${v.anchor}`} class="flex items-center gap-3 rounded-2xl border border-border bg-surface-secondary/60 p-3 transition-colors hover:border-accent/40">
+                      <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand to-brand-2 text-white">
+                        {Icon && <Icon className="size-5" />}
+                      </span>
+                      <span class="min-w-0">
+                        <span class="block truncate text-sm font-semibold">{v.title ?? m?.title}</span>
+                        <span class="block truncate text-xs text-muted">{m?.tagline}</span>
+                      </span>
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- ======================================================== SYLLABUS -->
+  <section id="programi" class="container-page mt-24 scroll-mt-24">
+    <div class="max-w-2xl">
+      <p class="text-xs font-semibold tracking-wider text-accent uppercase">Programi</p>
+      <h2 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Katër blloqe, një rrugë</h2>
+      <p class="mt-3 text-muted">Laboratorët ndjekin leksionet e lëndës: çdo koncept i leksionit ka një ushtrim dhe një vizualizim ku mund ta provoni.</p>
+    </div>
+    <div class="mt-10 flex flex-col gap-12">
+      {
+        blocks.map((b, i) => {
+          const Icon = BLOCK_ICON[b.id];
+          const blockLabs = labs.filter((l) => b.labs.includes(l.n));
+          if (!blockLabs.length) return null;
           return (
-            <div class="topic-pill">
-              <strong>{t.name}</strong>
-              <span>{ls.map((l) => <a class="chip" href={`${base}laboratoret/${l.slug}/`}>{l.slug}</a>)}</span>
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-[17rem_1fr]">
+              <div class="lg:sticky lg:top-24 lg:self-start">
+                <span class="grid size-12 place-items-center rounded-2xl text-white shadow-lg" style={`background: ${BLOCK_COLOR[b.id]}`}>
+                  {Icon && <Icon className="size-6" />}
+                </span>
+                <p class="mt-4 font-mono text-xs font-semibold text-muted">BLLOKU {i + 1}</p>
+                <h3 class="mt-1 text-xl font-bold tracking-tight">{b.name}</h3>
+                {b.lectures && (
+                  <span class="chip chip--default chip--sm chip--secondary mt-2">
+                    <span class="chip__label">{b.lectures}</span>
+                  </span>
+                )}
+              </div>
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {blockLabs.map((l) => (
+                  <LabCard lab={l} block={b.id} />
+                ))}
+              </div>
             </div>
           );
-        })}
+        })
+      }
+    </div>
+  </section>
+
+  <!-- ================================================== VISUALIZATIONS -->
+  <section class="container-page mt-28">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div class="max-w-2xl">
+        <p class="text-xs font-semibold tracking-wider text-accent uppercase">Vizualizimet</p>
+        <h2 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Shihni algoritmet duke punuar</h2>
+        <p class="mt-3 text-muted">Hap pas hapi, me pseudokodin e leksionit dhe me grafet e vetë laboratorëve. Pa instalim, edhe në telefon.</p>
       </div>
-    </section>
-  </div>
-</Base>
+      <a href={`${base}vizualizime/`} class="button button--secondary gap-2">Të gjitha <ArrowRight className="size-4" /></a>
+    </div>
+    <div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        viz.slice(0, 6).map((v) => {
+          const Icon = VIZ_ICON[v.id];
+          return (
+            <a href={`${base}vizualizime/${v.id}/`} class="group card-hover flex gap-4 rounded-3xl border border-border bg-surface p-5 shadow-surface">
+              <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand to-brand-2 text-white shadow-md transition-transform duration-300 group-hover:scale-105">
+                {Icon && <Icon className="size-6" />}
+              </span>
+              <span class="min-w-0">
+                <span class="block font-semibold tracking-tight">{v.title}</span>
+                <span class="mt-1 block text-sm text-muted">{v.tagline}</span>
+              </span>
+            </a>
+          );
+        })
+      }
+    </div>
+  </section>
 
-<style>
-  .home { padding: 2.5rem 0 3rem; }
-
-  .hero { max-width: 720px; margin-bottom: 3rem; }
-  .hero-eyebrow { font-size: .84rem; color: var(--ink-3); margin-bottom: .5rem; letter-spacing: .01em; }
-  .hero h1 { margin-bottom: .4em; }
-  .hero-lede { font-size: 1.08rem; color: var(--ink-2); line-height: 1.65; }
-  .hero-actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.5rem; }
-
-  /* ---- current lab ---- */
-  .current { margin-bottom: 3rem; }
-  .current-flag {
-    display: inline-flex; align-items: center; gap: .5rem;
-    font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-    color: var(--accent); margin-bottom: .7rem;
-  }
-  .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 0 var(--accent-line); animation: pulse 2.4s infinite; }
-  @keyframes pulse { 70% { box-shadow: 0 0 0 7px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
-  @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
-
-  .current-card {
-    display: grid; gap: 1.5rem;
-    border: 1px solid var(--accent-line); border-radius: var(--radius);
-    background: var(--surface); overflow: hidden;
-  }
-  @media (min-width: 860px) { .current-card { grid-template-columns: minmax(0, 1.6fr) minmax(220px, 1fr); gap: 0; } }
-  .current-main { padding: 1.5rem 1.6rem; }
-  .current-top { display: flex; align-items: baseline; gap: .7rem; font-size: .84rem; margin-bottom: .3rem; }
-  .current-n { font-family: var(--font-mono); font-weight: 700; color: var(--accent); }
-  .current-card h2 { margin: 0 0 .5rem; font-size: 1.4rem; }
-  .current-summary { color: var(--ink-2); font-size: .95rem; margin-bottom: .9rem; }
-  .current-chips { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: 1.2rem; }
-  .current-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
-
-  .current-facts { margin: 0; padding: 1.5rem 1.6rem; background: var(--accent-soft); border-top: 1px solid var(--accent-line); display: grid; gap: .9rem; align-content: start; }
-  @media (min-width: 860px) { .current-facts { border-top: 0; border-left: 1px solid var(--accent-line); } }
-  .current-facts dt { font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: .15rem; }
-  .current-facts dd { margin: 0; font-size: .88rem; color: var(--ink-2); }
-  .current-facts .mono { font-size: .8rem; }
-  .current-prev { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
-
-  /* ---- shortcuts ---- */
-  .shortcuts { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin-bottom: 3.5rem; }
-  .sc { display: flex; flex-direction: column; gap: .2rem; }
-  .sc-n { font-size: 1.6rem; font-weight: 700; color: var(--accent); line-height: 1.1; }
-  .sc strong { font-size: .98rem; }
-  .sc small { color: var(--ink-3); font-size: .84rem; line-height: 1.5; }
-
-  /* ---- sections ---- */
-  .section { margin-bottom: 3.5rem; }
-  .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; padding-bottom: .5rem; border-bottom: 1px solid var(--border); }
-  .section-head h2 { margin: 0; font-size: 1.1rem; }
-  .section-more { font-size: .85rem; text-decoration: none; white-space: nowrap; }
-
-  .mini-timeline { list-style: none; padding: 0; margin: 0; display: grid; gap: .3rem; }
-  .mini-timeline li { margin: 0; }
-  .mini-timeline a {
-    display: flex; align-items: center; gap: .8rem; padding: .5rem .7rem;
-    border-radius: var(--radius-sm); text-decoration: none; color: inherit;
-    border: 1px solid transparent;
-  }
-  .mini-timeline a:hover { background: var(--surface-2); border-color: var(--border); }
-  .mini-timeline a.is-current { background: var(--accent-soft); border-color: var(--accent-line); }
-  .mt-n { flex: none; font-size: .78rem; font-weight: 700; color: var(--accent); width: 2ch; }
-  .mt-title { font-size: .92rem; }
-
-  .hw-mini { list-style: none; padding: 0; margin: 0; display: grid; gap: .4rem; }
-  .hw-mini li { margin: 0; }
-  .hw-mini a {
-    display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
-    padding: .6rem .8rem; border: 1px solid var(--border); border-radius: var(--radius-sm);
-    text-decoration: none; color: inherit; background: var(--surface);
-  }
-  .hw-mini a:hover { border-color: var(--accent-line); background: var(--accent-soft); }
-  .hw-lab { flex: none; font-size: .76rem; font-weight: 700; color: var(--accent); }
-  .hw-title { font-size: .9rem; flex: 1; min-width: 150px; }
-
-  .viz { display: flex; flex-direction: column; gap: .35rem; }
-  .viz strong { font-size: 1rem; }
-  .viz-tag { font-size: .76rem; color: var(--accent); }
-  .viz small { font-size: .86rem; line-height: 1.5; }
-  .viz-labs { display: flex; gap: .3rem; margin-top: .3rem; }
-
-  .topic-row { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
-  .topic-pill { display: flex; align-items: center; justify-content: space-between; gap: .8rem; padding: .55rem .8rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); }
-  .topic-pill strong { font-size: .88rem; font-weight: 550; }
-  .topic-pill span { display: flex; gap: .25rem; }
-  .topic-pill .chip { font-size: .72rem; padding: .1em .5em; }
-</style>
+  <!-- ============================================================= HOW -->
+  <section class="container-page mt-28">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+      {
+        [
+          { icon: BookOpenCheck, title: 'Lexoni teorinë', text: 'Çdo laborator nis me konceptet e leksionit, pseudokodin dhe shembujt e zgjidhur.' },
+          { icon: MousePointerClick, title: 'Provojeni në shfletues', text: 'Çdo ushtrim që hapte një dritare Pygame ka versionin e vet interaktiv në faqe.' },
+          { icon: Sparkles, title: 'Zgjidhni ushtrimet', text: 'Shkarkoni fletoren .ipynb dhe punoni në Jupyter, VS Code ose Google Colab.' },
+        ].map((s, i) => (
+          <div class="rounded-3xl border border-border bg-surface p-6 shadow-surface">
+            <div class="flex items-center gap-3">
+              <span class="grid size-10 place-items-center rounded-2xl bg-accent-soft text-accent">
+                <s.icon className="size-5" />
+              </span>
+              <span class="font-mono text-sm font-semibold text-muted">0{i + 1}</span>
+            </div>
+            <h3 class="mt-4 text-lg font-semibold tracking-tight">{s.title}</h3>
+            <p class="mt-2 text-sm text-muted">{s.text}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+</Layout>

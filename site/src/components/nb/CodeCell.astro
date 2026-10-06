@@ -1,0 +1,88 @@
+---
+/**
+ * One code cell. Short code is shown in full; long code folds away; code that
+ * opens a desktop window (Pygame / Tkinter) or needs a live Jupyter kernel is
+ * folded completely — its interactive version is embedded just above it.
+ */
+import { ChevronDown, Code2, Copy, MonitorSmartphone } from 'lucide-react';
+import Output from './Output.astro';
+
+interface Props {
+  cell: any;
+  spoilerWarning?: string;
+}
+const { cell, spoilerWarning } = Astro.props;
+const id = `code-${cell.srcIndex}-${cell.lines}-${cell.raw?.length ?? 0}`;
+const f = cell.flags || {};
+const lib = f.pygame ? 'Pygame' : f.tkinter ? 'Tkinter' : f.widgets ? 'Jupyter widgets' : f.subprocess ? 'program desktop' : '';
+const hasSpoiler = Boolean(spoilerWarning) && cell.outputs.some((o: any) => o.kind === 'plotly' || o.kind === 'image');
+const outputs = cell.outputs as any[];
+---
+
+{
+  cell.interactive ? (
+    <details class="group rounded-2xl border border-dashed border-border bg-surface-secondary/50">
+      <summary class="flex cursor-pointer list-none items-center gap-3 px-4 py-3 select-none [&::-webkit-details-marker]:hidden">
+        <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-default text-muted">
+          <MonitorSmartphone className="size-[18px]" />
+        </span>
+        <span class="min-w-0 flex-1">
+          <span class="block text-sm font-semibold">Kodi Python i ushtrimit</span>
+          <span class="block text-xs text-muted">
+            {lib} · {cell.lines} rreshta · hap një dritare në kompjuterin tuaj
+          </span>
+        </span>
+        <ChevronDown className="size-4 shrink-0 text-muted transition-transform group-open:rotate-180" />
+      </summary>
+      <div class="relative border-t border-dashed border-border">
+        <button type="button" data-copy={id} class="button button--sm button--tertiary absolute top-2.5 right-2.5 z-10">
+          <Copy className="size-3.5" />
+          <span data-copy-label>Kopjo</span>
+        </button>
+        <div class="nb-shiki max-h-[32rem] overflow-auto" id={id} set:html={cell.html} />
+      </div>
+    </details>
+  ) : (
+    <div class="flex flex-col gap-3">
+      <div class="overflow-hidden rounded-2xl border border-[var(--code-border)] bg-[var(--code-bg)]">
+        <div class="flex items-center justify-between gap-2 border-b border-[var(--code-border)] px-4 py-2">
+          <span class="flex items-center gap-2 text-xs font-medium text-muted">
+            <Code2 className="size-3.5" /> Python
+          </span>
+          <button type="button" data-copy={id} class="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-muted transition-colors hover:bg-default hover:text-foreground">
+            <Copy className="size-3.5" />
+            <span data-copy-label>Kopjo</span>
+          </button>
+        </div>
+        {cell.collapsed ? (
+          <details class="group">
+            <summary class="flex cursor-pointer list-none items-center gap-2 px-4 py-2.5 text-sm text-muted select-none hover:text-foreground [&::-webkit-details-marker]:hidden">
+              <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
+              <span class="group-open:hidden">Shfaq kodin e plotë · {cell.lines} rreshta</span>
+              <span class="hidden group-open:inline">Fshih kodin</span>
+            </summary>
+            <div class="nb-shiki border-t border-[var(--code-border)]" id={id} set:html={cell.html} />
+          </details>
+        ) : (
+          <div class="nb-shiki" id={id} set:html={cell.html} />
+        )}
+      </div>
+      {outputs.length > 0 &&
+        (hasSpoiler ? (
+          <details class="group rounded-2xl border border-dashed border-warning/50 bg-warning-soft/40">
+            <summary class="flex cursor-pointer list-none flex-col gap-0.5 px-4 py-3 select-none [&::-webkit-details-marker]:hidden">
+              <span class="text-sm font-semibold text-warning">Rezultati i pritshëm</span>
+              <span class="text-xs text-muted">{spoilerWarning}</span>
+            </summary>
+            <div class="flex flex-col gap-3 p-3 pt-0">
+              {outputs.map((o) => (
+                <Output out={o} />
+              ))}
+            </div>
+          </details>
+        ) : (
+          outputs.map((o) => <Output out={o} />)
+        ))}
+    </div>
+  )
+}

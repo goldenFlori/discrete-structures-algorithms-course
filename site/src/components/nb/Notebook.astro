@@ -1,0 +1,150 @@
+---
+/**
+ * A clean, web-native rendering of one notebook.
+ *  - markdown becomes reading text and section cards
+ *  - code is shown tidily; long implementations fold away
+ *  - an exercise that opens a Pygame/Tkinter window is replaced by its
+ *    interactive web version (see `embeds` in content/course.mjs)
+ * Nothing here executes notebook code; everything was prepared at build time.
+ */
+import { BookOpen, FlaskConical, Gauge, Globe2, House, Lightbulb, Users } from 'lucide-react';
+import CodeCell from './CodeCell.astro';
+import VizEmbed from '../VizEmbed.astro';
+
+interface Slice {
+  from: number | null;
+  to: number | null;
+}
+interface Embed {
+  cell: number;
+  viz: string;
+  title?: string;
+  props?: Record<string, any>;
+}
+interface Props {
+  notebook: any;
+  file: string;
+  slice?: Slice[] | null;
+  spoilerWarning?: string;
+  embeds?: Embed[];
+}
+
+const { notebook, file, slice = null, spoilerWarning, embeds = [] } = Astro.props;
+const cells: any[] = slice?.length ? slice.flatMap((r) => notebook.cells.slice(r.from ?? 0, r.to ?? notebook.cells.length)) : notebook.cells;
+
+const embedAt = new Map(embeds.map((e) => [e.cell, e]));
+const lastOfSrc = new Map<number, number>();
+cells.forEach((c, i) => lastOfSrc.set(c.srcIndex, i));
+const anchorFor = (cell: number) => `viz-${file.replace(/\.ipynb$/, '')}-${cell}`;
+
+const KIND: Record<string, { label: string; icon: any; color: string }> = {
+  exercise: { label: 'Ushtrim', icon: FlaskConical, color: 'var(--accent)' },
+  theory: { label: 'Teori', icon: BookOpen, color: 'var(--brand-2)' },
+  classwork: { label: 'Punë në klasë', icon: Users, color: 'var(--warning)' },
+  homework: { label: 'Detyrë shtëpie', icon: House, color: 'var(--danger)' },
+  reflect: { label: 'Pyetje reflektuese', icon: Lightbulb, color: 'var(--brand-3)' },
+  scenario: { label: 'Skenar real', icon: Globe2, color: 'var(--success)' },
+  complexity: { label: 'Kompleksiteti', icon: Gauge, color: 'var(--brand-2)' },
+};
+---
+
+<div class="notebook flex flex-col gap-6">
+  {
+    cells.map((cell: any, i: number) => {
+      const embed = embedAt.get(cell.srcIndex);
+      const embedAfter = embed && !(cell.type === 'code' && cell.interactive) && lastOfSrc.get(cell.srcIndex) === i;
+
+      if (cell.type === 'markdown') {
+        const meta = KIND[cell.kind];
+        const tagged = meta && cell.heading;
+        const Icon = meta?.icon;
+        const body = cell.html?.trim() ? <div class="nb-prose" set:html={cell.html} /> : null;
+        return (
+          <>
+            {tagged && !body ? (
+              <section id={cell.id} class="mt-6 scroll-mt-24 border-t border-separator pt-8" style={`--kind:${meta.color}`}>
+                <div class="flex items-start gap-3">
+                  <span class="grid size-10 shrink-0 place-items-center rounded-2xl" style="background: color-mix(in oklab, var(--kind) 14%, transparent); color: var(--kind)">
+                    <Icon className="size-5" />
+                  </span>
+                  <div class="min-w-0">
+                    <p class="text-[0.7rem] font-semibold tracking-wider uppercase" style="color: var(--kind)">{meta.label}</p>
+                    <a href={`#${cell.id}`} class="block">
+                      <h2 class="text-2xl leading-snug font-bold tracking-tight text-balance">{cell.heading}</h2>
+                    </a>
+                  </div>
+                </div>
+              </section>
+            ) : tagged ? (
+              <section id={cell.id} class="scroll-mt-24 rounded-3xl border border-border bg-surface p-5 shadow-surface sm:p-7" style={`--kind:${meta.color}`}>
+                <div class="mb-4 flex items-start gap-3">
+                  <span class="grid size-10 shrink-0 place-items-center rounded-2xl" style="background: color-mix(in oklab, var(--kind) 14%, transparent); color: var(--kind)">
+                    <Icon className="size-5" />
+                  </span>
+                  <div class="min-w-0">
+                    <p class="text-[0.7rem] font-semibold tracking-wider uppercase" style="color: var(--kind)">{meta.label}</p>
+                    <a href={`#${cell.id}`} class="block">
+                      {cell.level <= 2 ? (
+                        <h2 class="text-xl leading-snug font-bold tracking-tight text-balance sm:text-2xl">{cell.heading}</h2>
+                      ) : (
+                        <h3 class="text-lg leading-snug font-bold tracking-tight text-balance">{cell.heading}</h3>
+                      )}
+                    </a>
+                  </div>
+                </div>
+                {body}
+              </section>
+            ) : cell.heading ? (
+              <section id={cell.id} class="scroll-mt-24">
+                <a href={`#${cell.id}`} class="block">
+                  {cell.level <= 2 ? (
+                    <h2 class="mt-4 text-2xl font-bold tracking-tight text-balance">{cell.heading}</h2>
+                  ) : (
+                    <h3 class="mt-2 text-xl font-bold tracking-tight text-balance">{cell.heading}</h3>
+                  )}
+                </a>
+                {body && <div class="mt-3">{body}</div>}
+              </section>
+            ) : cell.id ? (
+              <span id={cell.id} class="block scroll-mt-24" />
+            ) : (
+              body
+            )}
+            {embedAfter && <VizEmbed viz={embed!.viz} props={embed!.props} anchor={anchorFor(cell.srcIndex)} label={`Provojeni në shfletues · ${embed!.title ?? ''}`} class="my-2" />}
+          </>
+        );
+      }
+
+      if (cell.type === 'code') {
+        return (
+          <>
+            {cell.interactive && embed && <VizEmbed viz={embed.viz} props={embed.props} anchor={anchorFor(cell.srcIndex)} label={`Versioni interaktiv · ${embed.title ?? 'ushtrimi'}`} class="my-2" />}
+            <CodeCell cell={cell} spoilerWarning={spoilerWarning} />
+            {embedAfter && <VizEmbed viz={embed!.viz} props={embed!.props} anchor={anchorFor(cell.srcIndex)} label={`Provojeni në shfletues · ${embed!.title ?? ''}`} class="my-2" />}
+          </>
+        );
+      }
+      return null;
+    })
+  }
+</div>
+
+<script>
+  import '../../scripts/plotly-figure.ts';
+
+  // Copy buttons on code blocks.
+  document.addEventListener('click', async (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-copy]');
+    if (!btn) return;
+    const pre = document.getElementById(btn.dataset.copy!)?.querySelector('pre');
+    if (!pre) return;
+    const label = btn.querySelector('[data-copy-label]');
+    try {
+      await navigator.clipboard.writeText(pre.textContent || '');
+      if (label) label.textContent = 'U kopjua';
+    } catch {
+      if (label) label.textContent = 'Gabim';
+    }
+    setTimeout(() => label && (label.textContent = 'Kopjo'), 1600);
+  });
+</script>

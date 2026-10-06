@@ -26,6 +26,8 @@ function loadPlotly(): Promise<any> {
 
 class PlotlyFigure extends HTMLElement {
   private loaded = false;
+  host: HTMLElement | null = null;
+  spec: any = null;
 
   connectedCallback() {
     const status = document.createElement('div');
@@ -65,19 +67,9 @@ class PlotlyFigure extends HTMLElement {
       host.className = 'pf-plot';
       this.replaceChildren(host);
 
-      const dark = matchMedia('(prefers-color-scheme: dark)').matches
-        ? document.documentElement.dataset.theme !== 'light'
-        : document.documentElement.dataset.theme === 'dark';
-
-      const layout = {
-        ...(spec.layout || {}),
-        autosize: true,
-        margin: { l: 55, r: 25, t: 45, b: 50, ...(spec.layout?.margin || {}) },
-        // The notebooks set their own colours; only fill in what they leave open.
-        paper_bgcolor: spec.layout?.paper_bgcolor ?? 'rgba(0,0,0,0)',
-        plot_bgcolor: spec.layout?.plot_bgcolor ?? 'rgba(0,0,0,0)',
-        font: { color: dark ? '#b9b7b1' : '#4a4945', ...(spec.layout?.font || {}) },
-      };
+      const layout = { ...(spec.layout || {}), autosize: true, margin: { l: 55, r: 25, t: 45, b: 50, ...(spec.layout?.margin || {}) }, ...themed(spec.layout || {}) };
+      this.host = host;
+      this.spec = spec;
 
       await Plotly.newPlot(host, spec.data || [], layout, {
         responsive: true,
@@ -92,6 +84,30 @@ class PlotlyFigure extends HTMLElement {
     }
   }
 }
+
+/** Colours that follow the site theme; the notebook's own choices are kept. */
+function themed(base: any) {
+  const dark = document.documentElement.classList.contains('dark');
+  const grid = dark ? 'rgba(255,255,255,0.09)' : 'rgba(30,30,60,0.09)';
+  const out: any = {
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    font: { family: 'Inter Variable, ui-sans-serif, system-ui', ...(base.font || {}), color: dark ? '#cfcfe0' : '#3a3a4c' },
+  };
+  const axes = Object.keys(base).filter((k) => /^[xy]axis\d*$/.test(k));
+  for (const k of axes.length ? axes : ['xaxis', 'yaxis']) {
+    out[k] = { ...(base[k] || {}), gridcolor: grid, zerolinecolor: grid, linecolor: grid };
+  }
+  return out;
+}
+
+window.addEventListener('themechange', () => {
+  const Plotly = (window as any).Plotly;
+  if (!Plotly) return;
+  document.querySelectorAll<PlotlyFigure>('plotly-figure').forEach((el) => {
+    if (el.host && el.spec) void Plotly.relayout(el.host, themed(el.spec.layout || {}));
+  });
+});
 
 if (!customElements.get('plotly-figure')) {
   customElements.define('plotly-figure', PlotlyFigure);

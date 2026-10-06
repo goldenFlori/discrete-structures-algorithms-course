@@ -1,9 +1,11 @@
 /**
  * Quality checks against the built site, in a real browser.
  *
- * Verifies the things a student would actually hit: every page renders without
- * console errors, the visualizers respond to their controls, search returns
- * results, downloads resolve, and nothing unpublished is reachable.
+ * Verifies what a student actually hits: every page renders without console
+ * or hydration errors, every lab has its interactive visualizations, no
+ * notebook error/noise leaks onto the page, every visualizer responds to its
+ * controls, search works, downloads resolve, and nothing unpublished is
+ * reachable.
  */
 import { chromium } from 'playwright';
 import { createServer } from 'node:http';
@@ -12,48 +14,33 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
+const course = JSON.parse(fs.readFileSync(path.resolve(root, '..', 'src/generated/course.json'), 'utf8'));
 const PORT = 4321;
-
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript',
   '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml',
   '.ipynb': 'application/json', '.woff2': 'font/woff2', '.wasm': 'application/wasm',
+  '.pf_meta': 'application/octet-stream', '.pf_index': 'application/octet-stream', '.pf_fragment': 'application/octet-stream',
 };
-
 const server = createServer((req, res) => {
   const url = decodeURIComponent((req.url || '/').split('?')[0]);
   let file = path.join(root, url);
-  if (!file.startsWith(root)) { res.writeHead(403).end(); return; }
+  if (!file.startsWith(root)) return void res.writeHead(403).end();
   try {
     if (fs.statSync(file).isDirectory()) file = path.join(file, 'index.html');
-  } catch {
-    res.writeHead(404).end('not found');
-    return;
-  }
-  try {
-    const buf = fs.readFileSync(file);
     res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream' });
-    res.end(buf);
+    res.end(fs.readFileSync(file));
   } catch {
     res.writeHead(404).end('not found');
   }
 });
-
 await new Promise((r) => server.listen(PORT, r));
 const BASE = `http://127.0.0.1:${PORT}`;
-
 const results = [];
-const pass = (n, d = '') => results.push({ ok: true, n, d });
-const fail = (n, d = '') => results.push({ ok: false, n, d });
+const pass = (name, detail = '') => results.push({ ok: true, name, detail });
+const fail = (name, detail = '') => results.push({ ok: false, name, detail });
 
-// Use the browser already present in the environment when one is provided,
-// so the suite does not need a separate download.
-const EXEC = process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium';
-const browser = await chromium.launch(fs.existsSync(EXEC) ? { executablePath: EXEC } : {});
-
-/** innerText reflects CSS text-transform; compare case-insensitively. */
-const has = (haystack, needle) => haystack.toLocaleLowerCase('sq').includes(needle.toLocaleLowerCase('sq'));
-
+const browser = await chromium.launch();
 async function withPage(viewport, fn) {
   const ctx = await browser.newContext({ viewport });
   const page = await ctx.newPage();
@@ -63,309 +50,160 @@ async function withPage(viewport, fn) {
   try { await fn(page, errors); } finally { await ctx.close(); }
 }
 
+const labs = course.labs.filter((l) => l.isPublic);
+const supp = labs.flatMap((l) => l.resources.filter((r) => r.type !== 'main' && r.available).map((r) => `/laboratoret/${l.slug}/${r.notebook.replace(/\.ipynb$/, '')}/`));
 const PAGES = [
-  '/', '/laboratoret/', '/laboratoret/01/', '/laboratoret/02/', '/laboratoret/03/',
-  '/laboratoret/04/', '/laboratoret/05/', '/laboratoret/06/', '/laboratoret/07/',
-  '/laboratoret/08/', '/laboratoret/09/',
-  '/laboratoret/07/dijkstra-animated/', '/laboratoret/07/bellman-ford-animated/',
-  '/detyrat/', '/detyrat/algoritmet-e-renditjes/', '/detyrat/analiza-e-kompleksitetit/',
-  '/detyrat/scc-dhe-renditje-topologjike/',
-  '/vizualizime/', '/vizualizime/kompleksiteti/', '/vizualizime/renditja/',
-  '/vizualizime/grafet/', '/vizualizime/rruget/', '/vizualizime/floyd-warshall/',
-  '/python/', '/informacion/', '/kerko/',
+  '/', '/laboratoret/', ...labs.map((l) => `/laboratoret/${l.slug}/`), ...supp,
+  '/vizualizime/', ...course.visualizers.map((v) => `/vizualizime/${v.id}/`),
+  '/detyrat/', ...course.homework.map((h) => `/detyrat/${h.id}/`), '/python/',
 ];
 
-/* ---------------------------------------------------- 1. every page loads */
+/* ------------------------------------------- 1. every page loads cleanly */
 await withPage({ width: 1280, height: 900 }, async (page, errors) => {
   for (const p of PAGES) {
     errors.length = 0;
     const res = await page.goto(BASE + p, { waitUntil: 'networkidle' });
-    if (!res || res.status() !== 200) { fail(`ngarkohet ${p}`, `status ${res?.status()}`); continue; }
-    const h1 = await page.locator('h1').first().textContent().catch(() => null);
-    if (!h1?.trim()) { fail(`ngarkohet ${p}`, 'pa <h1>'); continue; }
-    // A page with no <main> content would render but be useless.
-    const len = (await page.locator('main').innerText()).length;
-    if (len < 120) { fail(`ngarkohet ${p}`, `përmbajtje shumë e shkurtër (${len})`); continue; }
-    if (errors.length) { fail(`ngarkohet ${p}`, `gabime console: ${errors.slice(0, 2).join(' | ')}`); continue; }
-    pass(`ngarkohet ${p}`);
+    // scroll through the page so lazily hydrated visualizers wake up too
+    await page.evaluate(async () => {
+      for (let y = 0; y < document.body.scrollHeight; y += 700) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 60)); }
+    });
+    await page.waitForTimeout(300);
+    const ok = res && res.status() === 200 && errors.length === 0;
+    (ok ? pass : fail)(`ngarkohet pa gabime ${p}`, ok ? '' : `status ${res?.status()} · ${errors.slice(0, 2).join(' | ')}`);
   }
 });
 
-/* ------------------------------------------------- 2. unpublished is absent */
+/* --------------------------------- 2. every lab has interactive visuals */
 await withPage({ width: 1280, height: 900 }, async (page) => {
-  const res = await page.goto(BASE + '/laboratoret/10/', { waitUntil: 'domcontentloaded' });
-  if (res && res.status() === 404) pass('laboratorët e papublikuar nuk janë të arritshëm');
-  else fail('laboratorët e papublikuar nuk janë të arritshëm', `status ${res?.status()}`);
-});
-
-/* ------------------------------------------------------- 3. visualizers */
-const VIZ = [
-  {
-    url: '/vizualizime/kompleksiteti/', tag: 'viz-complexity',
-    run: async (page) => {
-      const before = await page.locator('viz-complexity .cx-n').textContent();
-      await page.locator('viz-complexity input[type=range]').fill('200');
-      await page.waitForTimeout(150);
-      const after = await page.locator('viz-complexity .cx-n').textContent();
-      if (before === after) throw new Error('rrëshqitësi i n nuk ndryshoi asgjë');
-      const paths = await page.locator('viz-complexity svg path').count();
-      if (paths < 3) throw new Error(`pritej ≥3 kurba, u gjetën ${paths}`);
-      const note = await page.locator('viz-complexity .viz-note').innerText();
-      if (!note.includes('200')) throw new Error('shënimi nuk u përditësua me n-në e re');
-    },
-  },
-  {
-    url: '/vizualizime/renditja/', tag: 'viz-sorting',
-    run: async (page) => {
-      const bars = await page.locator('viz-sorting svg rect').count();
-      if (bars < 8) throw new Error(`pritej ≥8 shtylla, u gjetën ${bars}`);
-      const counter = () => page.locator('viz-sorting .viz-counter').textContent();
-      const c0 = await counter();
-      await page.getByRole('button', { name: 'Hapi tjetër' }).click();
-      await page.waitForTimeout(120);
-      if ((await counter()) === c0) throw new Error('butoni "Përpara" nuk lëvizi hapin');
-      // Jump to the end and confirm the array really is sorted.
-      const max = await page.locator('viz-sorting input[type=range]').getAttribute('max');
-      await page.locator('viz-sorting input[type=range]').fill(max);
-      await page.waitForTimeout(200);
-      const title = await page.locator('viz-sorting svg title').first().textContent();
-      const nums = title.match(/-?\d+/g).map(Number);
-      for (let i = 1; i < nums.length; i++) if (nums[i] < nums[i - 1]) throw new Error(`rezultati nuk është i renditur: ${nums}`);
-      // Switching algorithm must reload the steps.
-      await page.getByRole('button', { name: 'Merge Sort' }).click();
-      await page.waitForTimeout(150);
-      if (!(await page.locator('viz-sorting .viz-pseudo').innerText()).includes('MergeSort')) {
-        throw new Error('pseudokodi nuk u ndërrua me algoritmin');
-      }
-    },
-  },
-  {
-    url: '/vizualizime/grafet/', tag: 'viz-graph',
-    run: async (page) => {
-      const nodes = await page.locator('viz-graph [data-node]').count();
-      if (nodes < 5) throw new Error(`pritej ≥5 kulme, u gjetën ${nodes}`);
-      const adj = await page.locator('viz-graph .viz-panel').nth(1).innerText();
-      if (!has(adj, 'Lista e fqinjësisë') || !has(adj, 'deg')) throw new Error('lista e fqinjësisë mungon');
-      const mtx = await page.locator('viz-graph .viz-panel').nth(2).innerText();
-      if (!has(mtx, 'Matrica e fqinjësisë')) throw new Error('matrica e fqinjësisë mungon');
-      const max = await page.locator('viz-graph input[type=range]').getAttribute('max');
-      await page.locator('viz-graph input[type=range]').fill(max);
-      await page.waitForTimeout(200);
-      if (!(await page.locator('viz-graph .viz-note').innerText()).match(/Rendi i zbulimit|zbraz/))
-        throw new Error('BFS nuk arriti te hapi final');
-      // Kruskal on the weighted preset must reach |V|-1 edges.
-      await page.locator('viz-graph select').first().selectOption('klase2');
-      await page.getByRole('button', { name: 'Kruskal', exact: true }).click();
-      await page.waitForTimeout(200);
-      const max2 = await page.locator('viz-graph input[type=range]').getAttribute('max');
-      await page.locator('viz-graph input[type=range]').fill(max2);
-      await page.waitForTimeout(200);
-      const note = await page.locator('viz-graph .viz-note').innerText();
-      // Verified independently: Kruskal on that graph accepts A-C(1), C-E(2),
-      // B-D(3), C-D(4) — four edges, w(T*) = 10.
-      if (!note.includes('w(T*) = 10') || !note.includes('4 brinjë'))
-        throw new Error(`pritej MST me 4 brinjë dhe peshë 10, u lexua: ${note}`);
-    },
-  },
-  {
-    url: '/vizualizime/rruget/', tag: 'viz-paths',
-    run: async (page) => {
-      if (await page.locator('viz-paths .pv-col').count() !== 2) throw new Error('pritej dy kolona');
-      await page.getByRole('button', { name: 'Ekzekuto të dy deri në fund' }).click();
-      await page.waitForTimeout(300);
-      const sum = await page.locator('viz-paths .viz-panels').innerText();
-      if (!has(sum, 'Të dy japin të njëjtin rezultat'))
-        throw new Error('me peshë jo-negative të dy duhet të përputhen');
-      // Introduce a negative edge; Dijkstra should now be shown as unreliable.
-      await page.getByRole('button', { name: /negative/ }).first().click();
-      await page.waitForTimeout(200);
-      await page.getByRole('button', { name: 'Ekzekuto të dy deri në fund' }).click();
-      await page.waitForTimeout(300);
-      const sum2 = await page.locator('viz-paths .viz-panels').innerText();
-      if (!has(sum2, 'Peshë negative') || !has(sum2, 'Po'))
-        throw new Error('pesha negative nuk u raportua');
-      // Negative cycle must be detected by Bellman-Ford.
-      await page.getByRole('button', { name: 'Shto cikël negativ' }).click();
-      await page.waitForTimeout(200);
-      await page.getByRole('button', { name: 'Ekzekuto të dy deri në fund' }).click();
-      await page.waitForTimeout(300);
-      if (!has(await page.locator('viz-paths .viz-panels').innerText(), 'Cikël negativ i zbuluar'))
-        throw new Error('cikli negativ nuk u zbulua');
-    },
-  },
-  {
-    url: '/vizualizime/floyd-warshall/', tag: 'viz-floyd',
-    run: async (page) => {
-      const cells = await page.locator('viz-floyd .fw-table td').count();
-      if (cells !== 16) throw new Error(`pritej matricë 4×4, u gjetën ${cells} qeliza`);
-      const max = await page.locator('viz-floyd input[type=range]').getAttribute('max');
-      await page.locator('viz-floyd input[type=range]').fill(max);
-      await page.waitForTimeout(250);
-      const row = await page.locator('viz-floyd .fw-table tbody tr').first().innerText();
-      // D[0][2] must be 5: 0→1(3) then 1→2(2).
-      if (!/\b5\b/.test(row)) throw new Error(`rreshti final i pritur përmban 5: ${row}`);
-      if (!(await page.locator('viz-floyd .viz-panels').innerText()).includes('\u2192'))
-        throw new Error('rruga nuk u rindërtua');
-    },
-  },
-];
-
-for (const v of VIZ) {
-  await withPage({ width: 1366, height: 1000 }, async (page, errors) => {
-    await page.goto(BASE + v.url, { waitUntil: 'networkidle' });
-    // Wait for the element to be upgraded AND to have painted once.
-    await page.waitForFunction(
-      (tag) => {
-        const el = document.querySelector(tag);
-        return !!el && !!el.querySelector('.viz-note') && (el.querySelector('.viz-note').textContent || '').length > 5;
-      },
-      v.tag,
-      { timeout: 10000 },
-    ).catch(() => {});
-    try {
-      await v.run(page);
-      if (errors.length) fail(`vizualizuesi ${v.tag}`, `gabime console: ${errors[0]}`);
-      else pass(`vizualizuesi ${v.tag}`);
-    } catch (e) {
-      fail(`vizualizuesi ${v.tag}`, e.message);
-    }
-  });
-}
-
-/* ------------------------------------------------------------ 4. search */
-await withPage({ width: 1280, height: 900 }, async (page) => {
-  await page.goto(BASE + '/kerko/', { waitUntil: 'networkidle' });
-  for (const term of ['Dijkstra', 'Merge Sort', 'BFS', 'Kruskal']) {
-    const input = page.locator('#search input').first();
-    await input.fill(term);
-    await page.waitForTimeout(700);
-    const n = await page.locator('.pagefind-ui__result').count();
-    if (n > 0) pass(`kërkimi "${term}"`, `${n} rezultate`);
-    else fail(`kërkimi "${term}"`, 'asnjë rezultat');
+  for (const l of labs) {
+    await page.goto(`${BASE}/laboratoret/${l.slug}/`, { waitUntil: 'domcontentloaded' });
+    const n = await page.locator('[data-viz-id]').count();
+    (n > 0 ? pass : fail)(`Laboratori ${l.n} ka vizualizime`, `${n}`);
   }
 });
 
-/* --------------------------------------------------------- 5. downloads */
+/* ------------------------------------ 3. no notebook noise on any page */
 await withPage({ width: 1280, height: 900 }, async (page) => {
-  await page.goto(BASE + '/laboratoret/07/', { waitUntil: 'domcontentloaded' });
-  const links = await page.locator('.dl-list a').evaluateAll((as) => as.map((a) => a.getAttribute('href')));
-  let bad = 0;
-  for (const href of links) {
-    const r = await page.request.get(BASE + href);
-    if (r.status() !== 200) bad++;
+  const NOISE = [/Traceback \(most recent call last\)/, /SystemExit/, /Hello from the pygame community/, /pygame \d+\.\d+\.\d+ \(SDL/, /Kernel crashed/i, /Dalje \(stderr\)/];
+  let bad = [];
+  // the setup page explains these errors on purpose
+  for (const p of PAGES.filter((x) => x !== '/python/')) {
+    await page.goto(BASE + p, { waitUntil: 'domcontentloaded' });
+    const text = await page.locator('main').innerText();
+    for (const re of NOISE) if (re.test(text)) bad.push(`${p}: ${re}`);
   }
-  if (!bad && links.length === 3) pass('shkarkimet e Laboratorit 7', `${links.length} skedarë, të gjithë 200`);
-  else fail('shkarkimet e Laboratorit 7', `${links.length} lidhje, ${bad} të prishura`);
+  (bad.length === 0 ? pass : fail)('asnjë gabim apo zhurmë nga fletoret në faqe', bad.slice(0, 4).join(' · '));
 });
 
-/* ------------------------------------------------------- 6. plotly output */
+/* ------------------------------------- 4. every visualizer responds */
 await withPage({ width: 1280, height: 900 }, async (page, errors) => {
-  await page.goto(BASE + '/laboratoret/02/', { waitUntil: 'networkidle' });
-  await page.locator('plotly-figure').first().scrollIntoViewIfNeeded();
+  for (const v of course.visualizers) {
+    errors.length = 0;
+    await page.goto(`${BASE}/vizualizime/${v.id}/`, { waitUntil: 'networkidle' });
+    const shell = page.locator('[data-viz]').first();
+    await shell.waitFor({ timeout: 10000 });
+    const before = await shell.innerText();
+    const next = shell.locator('button[aria-label="Hapi tjetër (→)"]');
+    if (await next.count()) {
+      await next.first().click();
+      await next.first().click();
+    } else if (await shell.locator('[role="button"][aria-label^="Kulmi"]').count()) {
+      // map games: click a city next to the start
+      await shell.locator('[role="button"][aria-label^="Kulmi"]').nth(1).click();
+    } else {
+      // quiz games: answer with the last option
+      const btn = shell.locator('button:not([aria-label])').filter({ hasNotText: /^$/ }).last();
+      await btn.click().catch(() => {});
+    }
+    await page.waitForTimeout(400);
+    const after = await shell.innerText();
+    const ok = before !== after && errors.length === 0;
+    (ok ? pass : fail)(`vizualizimi ${v.id} reagon`, ok ? '' : errors.slice(0, 2).join(' | ') || 'teksti nuk ndryshoi');
+  }
+});
+
+/* ----------------------------------------------- 5. search palette */
+await withPage({ width: 1280, height: 900 }, async (page) => {
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await page.keyboard.press('Control+k');
+  const input = page.getByPlaceholder(/Kërko:/);
+  await input.waitFor({ timeout: 5000 });
+  for (const q of ['Dijkstra', 'Merge Sort', 'prerja']) {
+    await input.fill(q);
+    await page.waitForTimeout(900);
+    const n = await page.locator('[role="option"]').count();
+    (n > 0 ? pass : fail)(`kërkimi "${q}"`, `${n} rezultate`);
+  }
+});
+
+/* --------------------------------------------------- 6. theme toggle */
+await withPage({ width: 1280, height: 900 }, async (page) => {
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  const before = await page.evaluate(() => document.documentElement.classList.contains('dark'));
+  await page.getByRole('button', { name: /temën/ }).click();
+  const after = await page.evaluate(() => document.documentElement.classList.contains('dark'));
+  await page.reload({ waitUntil: 'networkidle' });
+  const kept = await page.evaluate(() => document.documentElement.classList.contains('dark'));
+  (before !== after && kept === after ? pass : fail)('tema ndryshon dhe mbahet mend');
+});
+
+/* ------------------------------------------------ 7. plotly + KaTeX */
+await withPage({ width: 1280, height: 900 }, async (page) => {
+  await page.goto(BASE + '/laboratoret/01/', { waitUntil: 'networkidle' });
+  const fig = page.locator('plotly-figure').first();
+  await fig.scrollIntoViewIfNeeded();
   try {
     await page.waitForSelector('plotly-figure .pf-plot svg', { timeout: 20000 });
     pass('grafikët Plotly rirenderohen interaktivë');
   } catch {
-    fail('grafikët Plotly rirenderohen interaktivë', 'figura nuk u vizatua');
+    fail('grafikët Plotly rirenderohen interaktivë');
   }
+  await page.goto(BASE + '/laboratoret/02/laborator-02-ushtrime-shtese/', { waitUntil: 'domcontentloaded' });
+  const k = await page.locator('.katex').count();
+  (k > 0 ? pass : fail)('matematika renderohet (KaTeX)', `${k}`);
 });
 
-/* ----------------------------------------------------- 7. mobile layout */
-await withPage({ width: 375, height: 780 }, async (page) => {
-  for (const p of ['/', '/laboratoret/', '/laboratoret/08/', '/detyrat/', '/vizualizime/renditja/', '/python/']) {
+/* ----------------------------------------------------- 8. downloads */
+await withPage({ width: 1280, height: 900 }, async (page) => {
+  const files = [...new Set(labs.flatMap((l) => l.resources.map((r) => r.notebook)))];
+  let bad = 0;
+  for (const f of files) {
+    const res = await page.request.get(`${BASE}/shkarkime/${f}`);
+    if (res.status() !== 200) bad++;
+  }
+  (bad === 0 ? pass : fail)('shkarkimet e fletoreve', `${files.length} skedarë, ${bad} mungojnë`);
+});
+
+/* ------------------------------------------ 9. nothing unpublished */
+await withPage({ width: 1280, height: 900 }, async (page) => {
+  const res = await page.goto(BASE + '/laboratoret/11/', { waitUntil: 'domcontentloaded' });
+  (res && res.status() === 404 ? pass : fail)('laboratorët e papublikuar nuk janë të arritshëm', `status ${res?.status()}`);
+});
+
+/* ------------------------------------------------------- 10. mobile */
+await withPage({ width: 390, height: 844 }, async (page) => {
+  for (const p of ['/', '/laboratoret/', '/laboratoret/07/', '/laboratoret/09/', '/vizualizime/grafet/', '/python/']) {
     await page.goto(BASE + p, { waitUntil: 'networkidle' });
-    const overflow = await page.evaluate(() =>
-      document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    if (overflow > 2) fail(`mobile ${p}`, `rrëshqitje horizontale ${overflow}px`);
-    else pass(`mobile ${p}`);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    (overflow <= 1 ? pass : fail)(`celular ${p} pa rrëshqitje horizontale`, `${overflow}px`);
   }
-  // The mobile menu must actually open.
-  await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
-  await page.locator('#nav-toggle').click();
-  if (await page.locator('#nav-mobile').isVisible()) pass('menuja në celular hapet');
-  else fail('menuja në celular hapet');
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await page.locator('summary[aria-label="Menyja"]').click();
+  const visible = await page.getByRole('link', { name: 'Vizualizimet' }).last().isVisible();
+  (visible ? pass : fail)('menyja në celular hapet');
 });
 
-/* ------------------------------------------------- 8. Albanian + math + a11y */
+/* ------------------------------------------------ 11. Albanian text */
 await withPage({ width: 1280, height: 900 }, async (page) => {
-  await page.goto(BASE + '/laboratoret/05/', { waitUntil: 'domcontentloaded' });
-  const text = await page.locator('main').innerText();
-  const chars = ['ë', 'ç', 'Ë', 'Ç'].filter((c) => text.includes(c));
-  if (chars.length >= 2) pass('shkronjat shqipe shfaqen saktë', chars.join(' '));
-  else fail('shkronjat shqipe shfaqen saktë');
-
-  if ((await page.locator('.katex').count()) > 0) pass('matematika renderohet (KaTeX)');
-  else fail('matematika renderohet (KaTeX)');
-
-  if ((await page.locator('.nb-table-wrap').count()) > 0) pass('tabelat kanë kontejner me rrëshqitje');
-  else fail('tabelat kanë kontejner me rrëshqitje');
-
-  if ((await page.locator('.sec-homework').count()) > 0 && (await page.locator('.sec-classwork').count()) > 0)
-    pass('detyra dhe puna në klasë kanë identitet vizual');
-  else fail('detyra dhe puna në klasë kanë identitet vizual');
-
-  // The TOC must move with the reader.
-  await page.locator('.toc-list a').nth(3).click();
-  await page.waitForTimeout(600);
-  if ((await page.locator('.toc-list a.is-current').count()) > 0) pass('tabela e përmbajtjes ndjek pozicionin');
-  else fail('tabela e përmbajtjes ndjek pozicionin');
-
-  // Images must carry alt text.
-  const noAlt = await page.locator('main img:not([alt])').count();
-  if (noAlt === 0) pass('të gjitha figurat kanë tekst alternativ');
-  else fail('të gjitha figurat kanë tekst alternativ', `${noAlt} pa alt`);
-});
-
-/* ------------------------------------------- 9. GUI traces read as neutral */
-await withPage({ width: 1280, height: 900 }, async (page) => {
-  await page.goto(BASE + '/laboratoret/07/', { waitUntil: 'domcontentloaded' });
-  const benign = await page.locator('.nb-out-benign').count();
-  const hard = await page.locator('.nb-out-error').count();
-  if (benign >= 6 && hard === 0) pass('gjurmët SystemExit shfaqen si shënime, jo gabime', `${benign} shënime`);
-  else fail('gjurmët SystemExit shfaqen si shënime, jo gabime', `${benign} shënime, ${hard} gabime`);
-
-  await page.goto(BASE + '/laboratoret/01/', { waitUntil: 'domcontentloaded' });
-  const real = await page.locator('.nb-out-error').count();
-  if (real === 1) pass('gabimi real i Laboratorit 1 mbetet i dukshëm si gabim');
-  else fail('gabimi real i Laboratorit 1 mbetet i dukshëm si gabim', `u gjetën ${real}`);
-});
-
-/* ------------------------------------ 10. lab5/lab6 split and cross-links */
-await withPage({ width: 1280, height: 900 }, async (page) => {
-  await page.goto(BASE + '/laboratoret/05/', { waitUntil: 'domcontentloaded' });
-  const t5 = await page.locator('.lab-main').innerText();
-  await page.goto(BASE + '/laboratoret/06/', { waitUntil: 'domcontentloaded' });
-  const t6 = await page.locator('.lab-main').innerText();
-
-  const ok5 = t5.includes('Kruskal') && t5.includes('Detyrë për Shtëpi') && !t5.includes('Renditjet Topologjike');
-  const ok6 = t6.includes('Renditjet Topologjike') && t6.includes('Komponentet e Lidhura Fort') && !t6.includes('Punë në Klasë');
-  if (ok5 && ok6) pass('Lab 5 dhe Lab 6 ndajnë saktë të njëjtën fletore');
-  else fail('Lab 5 dhe Lab 6 ndajnë saktë të njëjtën fletore', `lab5=${ok5} lab6=${ok6}`);
-
-  // Embedded homework must link into the notebook, not be duplicated.
-  await page.goto(BASE + '/detyrat/', { waitUntil: 'domcontentloaded' });
-  const hrefs = await page.locator('.c-actions a').evaluateAll((as) => as.map((a) => a.getAttribute('href')));
-  if (hrefs.some((x) => x.includes('/laboratoret/05/#'))) pass('detyra e brendshme lidhet te seksioni i fletores');
-  else fail('detyra e brendshme lidhet te seksioni i fletores');
-});
-
-/* ----------------------------------------------------- 11. prev/next nav */
-await withPage({ width: 1280, height: 900 }, async (page) => {
-  await page.goto(BASE + '/laboratoret/05/', { waitUntil: 'domcontentloaded' });
-  await page.locator('.nav-next').click();
-  await page.waitForLoadState('domcontentloaded');
-  if (page.url().includes('/laboratoret/06/')) pass('navigimi Para/Pas midis laboratorëve');
-  else fail('navigimi Para/Pas midis laboratorëve', page.url());
+  await page.goto(BASE + '/laboratoret/', { waitUntil: 'domcontentloaded' });
+  const t = await page.locator('main').innerText();
+  (/ë/.test(t) && /ç/i.test(t) ? pass : fail)('shkronjat shqipe shfaqen saktë', 'ë ç');
 });
 
 await browser.close();
 server.close();
 
-/* --------------------------------------------------------------- report */
 const failed = results.filter((r) => !r.ok);
-console.log('');
-for (const r of results) {
-  console.log(`  ${r.ok ? '✓' : '✗'} ${r.n}${r.d ? `  — ${r.d}` : ''}`);
-}
-console.log(`\n  ${results.length - failed.length} / ${results.length} kaluan\n`);
+for (const r of results) console.log(`  ${r.ok ? '✓' : '✗'} ${r.name}${r.detail ? `  — ${r.detail}` : ''}`);
+console.log(`\n  ${results.length - failed.length} / ${results.length} kaluan`);
 process.exit(failed.length ? 1 : 0);

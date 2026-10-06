@@ -8,7 +8,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { renderNotebook } from './notebook.mjs';
-import { labs, homework, visualizers, course, topics } from '../content/course.mjs';
+import { labs, homework, visualizers, course, topics, blocks, embeds } from '../content/course.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const NB_DIR = path.join(root, 'content/notebooks');
@@ -108,7 +108,6 @@ async function main() {
     .map((lab) => {
       if (!VALID_STATUS.includes(lab.status)) warn(`Laboratori ${lab.n}: status i panjohur "${lab.status}"`);
       for (const t of lab.topics || []) if (!topicIds.has(t)) warn(`Laboratori ${lab.n}: temë e panjohur "${t}"`);
-      for (const v of lab.visualizers || []) if (!vizIds.has(v)) warn(`Laboratori ${lab.n}: vizualizues i panjohur "${v}"`);
 
       const resources = (lab.resources || []).map((r) => {
         const nb = notebooks[r.notebook];
@@ -135,6 +134,21 @@ async function main() {
         };
       });
 
+      // Interactive visualizations of this lab = embeds that fall inside its part of each notebook.
+      const labViz = [];
+      for (const r of resources) {
+        const nb = notebooks[r.notebook];
+        if (!nb) continue;
+        const inSlice = new Set(
+          (r.slice?.length ? r.slice.flatMap((x) => nb.cells.slice(x.from ?? 0, x.to ?? nb.cells.length)) : nb.cells).map((c) => c.srcIndex),
+        );
+        for (const e of embeds[r.notebook] || []) {
+          if (inSlice.has(e.cell) && !labViz.some((x) => x.viz === e.viz && x.resource === r.notebook && x.cell === e.cell)) {
+            labViz.push({ ...e, resource: r.notebook, type: r.type, anchor: `viz-${r.notebook.replace(/\.ipynb$/, '')}-${e.cell}` });
+          }
+        }
+      }
+
       // Dependencies actually needed for this lab, derived from real imports.
       const deps = new Set();
       const flags = { pygame: false, tkinter: false, widgets: false, plotly: false, matplotlib: false, networkx: false, numpy: false };
@@ -152,6 +166,7 @@ async function main() {
         ...lab,
         slug: String(lab.n).padStart(2, '0'),
         resources,
+        viz: labViz,
         dependencies: [...deps].sort(),
         flags,
         homeworkEmbedded: hwEmbedded,
@@ -159,6 +174,19 @@ async function main() {
         isPublic: lab.status === 'published' || lab.status === 'updated',
       };
     });
+
+  for (const [file, list] of Object.entries(embeds)) {
+    const nb = notebooks[file];
+    if (!nb) {
+      warn(`embeds: fletorja ${file} nuk publikohet.`);
+      continue;
+    }
+    const indices = new Set(nb.cells.map((c) => c.srcIndex));
+    for (const e of list) {
+      if (!vizIds.has(e.viz)) warn(`embeds: ${file} qeliza ${e.cell} — vizualizim i panjohur "${e.viz}".`);
+      if (!indices.has(e.cell)) warn(`embeds: ${file} nuk ka qelizë ${e.cell}.`);
+    }
+  }
 
   for (const hw of homework) {
     if (!normLabs.some((l) => l.n === hw.lab)) warn(`Detyra "${hw.id}" referon Laboratorin ${hw.lab} që nuk ekziston.`);
@@ -211,9 +239,11 @@ async function main() {
     JSON.stringify({
       course,
       topics,
+      blocks,
       labs: normLabs,
       homework,
       visualizers,
+      embeds,
       packages: pkgList,
       latestLab: latest ? latest.n : null,
       problems,

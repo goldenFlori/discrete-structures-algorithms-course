@@ -1,200 +1,51 @@
 ---
-import Base from '../../layouts/Base.astro';
+import { ArrowRight, ClipboardList, FileText } from 'lucide-react';
+import Layout from '../../layouts/Layout.astro';
 import data from '../../generated/course.json';
-import notebooks from '../../generated/notebooks.json';
 
 const base = import.meta.env.BASE_URL;
-const labs = data.labs as any[];
-const nbs = notebooks as Record<string, any>;
-const topicName = (id: string) => (data.topics as any[]).find((t) => t.id === id)?.name || id;
+const labs = (data.labs as any[]).filter((l) => l.isPublic);
+const standalone = (data.homework as any[]).filter((h) => (h.status ?? 'published') !== 'draft');
+const embedded = labs.flatMap((l) => (l.homeworkEmbedded || []).map((h: any) => ({ ...h, lab: l })));
 
-/**
- * The whole semester in one table. Homework written inside a laboratory
- * notebook is linked to its exact section — never copied here.
- */
-type Row = {
-  lab: number; slug: string; labTitle: string;
-  title: string; summary?: string; topics: string[];
-  kind: 'standalone' | 'embedded';
-  href: string; download?: string; size?: number;
-  status: string; due: string;
-};
-
-const rows: Row[] = [];
-
-for (const h of data.homework as any[]) {
-  const lab = labs.find((l) => l.n === h.lab);
-  rows.push({
-    lab: h.lab, slug: lab?.slug ?? String(h.lab).padStart(2, '0'), labTitle: lab?.title ?? '',
-    title: h.title, summary: h.summary, topics: h.topics ?? [],
-    kind: 'standalone',
-    href: `${base}detyrat/${h.id}/`,
-    download: h.notebook ? `${base}shkarkime/${h.notebook}` : undefined,
-    size: h.notebook ? nbs[h.notebook]?.sizeBytes : undefined,
-    status: h.status ?? 'published', due: h.due ?? '',
-  });
-}
-
-for (const lab of labs) {
-  if (!lab.isPublic) continue;
-  for (const h of lab.homeworkEmbedded) {
-    const main = lab.resources.find((r: any) => r.type === 'main' && r.available);
-    rows.push({
-      lab: lab.n, slug: lab.slug, labTitle: lab.title,
-      title: h.title, summary: h.note, topics: lab.topics ?? [],
-      kind: 'embedded',
-      href: `${base}laboratoret/${lab.slug}/#${h.anchor}`,
-      download: main ? `${base}shkarkime/${main.notebook}` : undefined,
-      size: main ? nbs[main.notebook]?.sizeBytes : undefined,
-      status: 'published', due: '',
-    });
-  }
-}
-
-rows.sort((a, b) => a.lab - b.lab);
-const kb = (n?: number) => (!n ? '' : n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.round(n / 1024)} KB`);
-const { course } = data;
+// one list, in the order of the course
+const items = [
+  ...standalone.map((h) => ({ kind: 'file', lab: h.lab, title: h.title, text: h.summary, href: `${base}detyrat/${h.id}/` })),
+  ...embedded.map((h) => ({ kind: 'embedded', lab: h.lab.n, title: h.title, text: h.note, href: `${base}laboratoret/${h.lab.slug}/#${h.anchor}` })),
+].sort((a, b) => a.lab - b.lab);
 ---
 
-<Base
-  title="Detyrat e Shtëpisë"
-  description="Të gjitha detyrat e semestrit në një vend — të lidhura me laboratorin, temën dhe fletoren përkatëse."
->
-  <div class="page">
-    <header class="page-head">
-      <h1>Detyrat e Shtëpisë</h1>
-      <p class="lede">
-        Të gjitha detyrat e semestrit, në një listë të vetme. Disa janë fletore më vete;
-        të tjerat ndodhen brenda fletores së laboratorit — këtu lidhen drejt e te seksioni i duhur.
-      </p>
-      {course.classroomUrl ? (
-        <p class="callout callout-info">
-          <strong>Dorëzimi bëhet në Google Classroom.</strong> Kjo faqe mban udhëzimet, materialin
-          dhe fletoret; afatet dhe dorëzimi qëndrojnë te
-          <a href={course.classroomUrl} target="_blank" rel="noopener noreferrer"> Classroom</a>.
-        </p>
-      ) : (
-        <p class="callout callout-info">
-          <strong>Dorëzimi bëhet në Google Classroom.</strong> Kjo faqe mban udhëzimet, materialin
-          dhe fletoret; afatet dhe dorëzimi qëndrojnë te Classroom.
-        </p>
-      )}
-    </header>
-
-    <div class="hw-table-wrap">
-      <table class="hw-table">
-        <thead>
-          <tr>
-            <th scope="col">Lab</th>
-            <th scope="col">Detyra</th>
-            <th scope="col">Lloji</th>
-            <th scope="col">Temat</th>
-            <th scope="col">Afati</th>
-            <th scope="col"><span class="visually-hidden">Veprime</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr>
-              <td class="c-lab">
-                <a href={`${base}laboratoret/${r.slug}/`} class="lab-link">
-                  <span class="mono">{r.slug}</span>
-                </a>
-              </td>
-              <td class="c-title">
-                <a href={r.href}><strong>{r.title}</strong></a>
-                {r.summary && <p class="muted">{r.summary}</p>}
-                <p class="c-from muted">nga Laboratori {r.slug} — {r.labTitle}</p>
-              </td>
-              <td>
-                <span class={`badge ${r.kind === 'embedded' ? 'badge-danger' : 'badge-accent'}`}>
-                  {r.kind === 'embedded' ? 'Brenda labit' : 'Fletore më vete'}
-                </span>
-              </td>
-              <td class="c-topics">
-                {r.topics.slice(0, 2).map((t) => <span class="chip">{topicName(t)}</span>)}
-              </td>
-              <td class="c-due muted">
-                {r.due || 'Njoftohet në Classroom'}
-              </td>
-              <td class="c-actions">
-                <a class="btn btn-sm btn-primary" href={r.href}>Hape</a>
-                {r.download && (
-                  <a class="btn btn-sm" href={r.download} download title={`Shkarko (${kb(r.size)})`}>Shkarko</a>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+<Layout title="Detyrat e shtëpisë" description="Të gjitha detyrat e shtëpisë së semestrit në një listë.">
+  <section class="relative overflow-hidden">
+    <div class="bg-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_70%_80%_at_50%_0%,black,transparent)]"></div>
+    <div class="container-page relative pt-14 pb-6">
+      <p class="text-xs font-semibold tracking-wider text-danger uppercase">Pas laboratorit</p>
+      <h1 class="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl">Detyrat e shtëpisë</h1>
+      <p class="mt-4 max-w-2xl text-lg text-muted">Të gjitha detyrat e semestrit, sipas laboratorit ku jepen.</p>
     </div>
+  </section>
 
-    <section class="legend-block">
-      <h2>Si janë organizuar detyrat</h2>
-      <div class="grid grid-2">
-        <div class="card">
-          <span class="badge badge-accent">Fletore më vete</span>
-          <p>
-            Një <code>.ipynb</code> i veçantë, i shkarkueshëm. Zakonisht përmban kod të
-            gatshëm me boshllëqe të shënuara (<code># PLOTESO</code>, <code># NDRYSHO</code>)
-            plus pyetje analize për t'u përgjigjur me fjalët tuaja.
-          </p>
-        </div>
-        <div class="card">
-          <span class="badge badge-danger">Brenda labit</span>
-          <p>
-            Detyra jeton brenda fletores së laboratorit. Nuk e kemi kopjuar këtu — lidhja ju
-            çon drejt e te seksioni i saj në faqen e laboratorit, me gjithë kontekstin e ushtrimeve
-            që ajo ripërdor.
-          </p>
-        </div>
-      </div>
-      <p class="muted" style="margin-top:1rem">
-        <strong>Punë në Klasë</strong> nuk është detyrë shtëpie: janë problemet me letër që
-        zgjidhen gjatë orës. I gjeni brenda faqeve të Laboratorëve 5 dhe 7, të shënuara veçmas.
-      </p>
-    </section>
+  <div class="container-page mt-8">
+    <ol class="relative grid gap-4 border-l border-separator pl-6 sm:pl-8">
+      {
+        items.map((h) => (
+          <li class="relative">
+            <span class="absolute top-6 -left-[1.95rem] grid size-4 place-items-center rounded-full border-2 border-danger bg-background sm:-left-[2.45rem]" />
+            <a href={h.href} class="group card-hover flex flex-col gap-2 rounded-3xl border border-border bg-surface p-5 shadow-surface sm:flex-row sm:items-center sm:gap-5">
+              <span class="font-mono text-xs font-bold text-danger">LAB {String(h.lab).padStart(2, '0')}</span>
+              <span class="min-w-0 flex-1">
+                <span class="block font-semibold tracking-tight">{h.title}</span>
+                {h.text && <span class="mt-1 line-clamp-2 block text-sm text-muted">{String(h.text).replace(/`/g, '')}</span>}
+              </span>
+              <span class="flex items-center gap-2 text-xs text-muted">
+                {h.kind === 'file' ? <FileText className="size-4" /> : <ClipboardList className="size-4" />}
+                {h.kind === 'file' ? 'Fletore më vete' : 'Brenda laboratorit'}
+                <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
   </div>
-</Base>
-
-<style>
-  .page { padding: 2rem 0 3rem; }
-  .page-head { max-width: 760px; margin-bottom: 2rem; }
-  .lede { color: var(--ink-2); font-size: 1.02rem; }
-
-  .hw-table-wrap { position: relative; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
-  .hw-table { width: 100%; min-width: 760px; }
-  .hw-table th { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; }
-  .hw-table td { padding: .9em .75em; vertical-align: top; }
-  .hw-table th:first-child, .hw-table td:first-child { padding-left: 1em; }
-  .hw-table tr + tr td { border-top: 1px solid var(--border); }
-  .hw-table tbody tr:hover { background: var(--surface-2); }
-
-  .c-lab .lab-link {
-    display: inline-grid; place-items: center; width: 34px; height: 34px;
-    border-radius: 7px; background: var(--accent-soft); border: 1px solid var(--accent-line);
-    color: var(--accent-ink); text-decoration: none; font-weight: 700; font-size: .82rem;
-  }
-  .c-lab .lab-link:hover { background: var(--accent); color: #fff; }
-
-  .c-title { max-width: 380px; }
-  .c-title a { text-decoration: none; }
-  .c-title a:hover strong { text-decoration: underline; }
-  .c-title p { margin: .25rem 0 0; font-size: .85rem; line-height: 1.5; }
-  .c-from { font-size: .78rem !important; color: var(--ink-faint) !important; }
-  .c-topics { white-space: normal; }
-  .c-topics .chip { font-size: .72rem; margin: 0 .2rem .2rem 0; }
-  .c-due { font-size: .82rem; white-space: nowrap; }
-  .c-actions { white-space: nowrap; }
-  .c-actions .btn + .btn { margin-left: .35rem; }
-
-  .legend-block { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); }
-  .legend-block h2 { font-size: 1.05rem; margin-top: 0; }
-  .legend-block .card p { margin: .6rem 0 0; font-size: .89rem; line-height: 1.6; }
-
-  @media (max-width: 720px) {
-    .hw-table { min-width: 620px; }
-    .c-title p { display: none; }
-    .c-title .c-from { display: block; }
-  }
-</style>
+</Layout>

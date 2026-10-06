@@ -1,0 +1,56 @@
+---
+/**
+ * One interactive visualization, hydrated only when it scrolls into view.
+ * The `viz` id comes from `visualizers` / `embeds` in content/course.mjs.
+ */
+import SortingViz from '../viz/SortingViz';
+import SortRaceViz from '../viz/SortRaceViz';
+import ComplexityViz from '../viz/ComplexityViz';
+import GuessAlgoGame from '../viz/GuessAlgoGame';
+import GraphLab from '../viz/GraphLab';
+import MazeViz from '../viz/MazeViz';
+import SccTopoViz from '../viz/SccTopoViz';
+import PathsViz from '../viz/PathsViz';
+import BfQuiz from '../viz/BfQuiz';
+import FloydViz from '../viz/FloydViz';
+import PathRaceGame from '../viz/PathRaceGame';
+import MaxFlowViz from '../viz/MaxFlowViz';
+import MatchingViz from '../viz/MatchingViz';
+
+interface Props {
+  viz: string;
+  props?: Record<string, any>;
+  anchor?: string;
+  label?: string;
+  class?: string;
+}
+const { viz, props = {}, anchor, label, class: cls = '' } = Astro.props;
+const v = { rootMargin: '300px' };
+---
+
+<div id={anchor} class={`viz-embed scroll-mt-24 ${cls}`} data-pagefind-ignore data-viz-id={viz}>
+  {
+    label && (
+      <p class="mb-3 flex items-center gap-2 text-[0.72rem] font-semibold tracking-wider text-accent uppercase">
+        <span class="relative flex size-2">
+          <span class="absolute inline-flex size-full animate-ping rounded-full bg-accent opacity-60" />
+          <span class="relative inline-flex size-2 rounded-full bg-accent" />
+        </span>
+        {label}
+      </p>
+    )
+  }
+  {viz === 'renditja' && <SortingViz client:visible={v} {...props} />}
+  {viz === 'gara-e-krahasimeve' && <SortRaceViz client:visible={v} {...props} />}
+  {viz === 'kompleksiteti' && <ComplexityViz client:visible={v} {...props} />}
+  {viz === 'gjej-algoritmin' && <GuessAlgoGame client:visible={v} {...props} />}
+  {viz === 'grafet' && <GraphLab client:visible={v} {...props} />}
+  {viz === 'labirinti' && <MazeViz client:visible={v} {...props} />}
+  {viz === 'scc-topologjike' && <SccTopoViz client:visible={v} {...props} />}
+  {viz === 'rruget' && <PathsViz client:visible={v} {...props} />}
+  {viz === 'kuizi-bellman-ford' && <BfQuiz client:visible={v} {...props} />}
+  {viz === 'floyd-warshall' && <FloydViz client:visible={v} {...props} />}
+  {viz === 'gara-e-rrugeve' && <PathRaceGame client:visible={v} {...props} />}
+  {viz === 'rrjedha-max' && <MaxFlowViz client:visible={v} {...props} />}
+  {viz === 'ciftezimi' && <MatchingViz client:visible={v} {...props} />}
+</div>

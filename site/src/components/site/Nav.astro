@@ -1,0 +1,88 @@
+---
+import { Search, Menu, FlaskConical, Sparkles, ClipboardList, TerminalSquare, GraduationCap } from 'lucide-react';
+import ThemeToggle from './ThemeToggle';
+import Logo from './Logo.astro';
+import data from '../../generated/course.json';
+
+const classroom = data.course.classroomUrl;
+
+const base = import.meta.env.BASE_URL;
+const path = Astro.url.pathname;
+const links = [
+  { href: `${base}laboratoret/`, label: 'Laboratorët', icon: FlaskConical },
+  { href: `${base}vizualizime/`, label: 'Vizualizimet', icon: Sparkles },
+  { href: `${base}detyrat/`, label: 'Detyrat', icon: ClipboardList },
+  { href: `${base}python/`, label: 'Mjedisi', icon: TerminalSquare },
+];
+const active = (href: string) => path.startsWith(href);
+---
+
+<header class="glass sticky top-0 z-50 border-b border-separator/80 no-print" style="height: var(--nav-h)">
+  <div class="container-page flex h-full items-center gap-3">
+    <a href={base} class="group flex min-w-0 items-center gap-2.5 rounded-xl pr-2" aria-label="Kreu">
+      <Logo class="size-9 shrink-0 transition-transform duration-300 group-hover:rotate-[-6deg]" />
+      <span class="hidden min-w-0 leading-tight sm:block">
+        <span class="block truncate text-[0.95rem] font-semibold tracking-tight">Struktura Diskrete & Algoritme</span>
+        <span class="block truncate text-[0.72rem] text-muted">Laboratori · Viti i Parë</span>
+      </span>
+    </a>
+
+    <nav class="ml-auto hidden items-center gap-1 md:flex" aria-label="Navigimi kryesor">
+      {
+        links.map((l) => (
+          <a
+            href={l.href}
+            class={`rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
+              active(l.href) ? 'bg-accent-soft text-accent' : 'text-foreground/75 hover:bg-default hover:text-foreground'
+            }`}
+            aria-current={active(l.href) ? 'page' : undefined}
+          >
+            {l.label}
+          </a>
+        ))
+      }
+    </nav>
+
+    <div class="ml-auto flex items-center gap-1.5 md:ml-2">
+      <button
+        type="button"
+        data-open-search
+        class="button button--sm button--tertiary hidden gap-2 pr-2 text-muted sm:inline-flex"
+        aria-label="Kërko (Ctrl K)"
+      >
+        <Search className="size-4" />
+        <span class="text-sm">Kërko</span>
+        <kbd class="ml-2 rounded-md border border-border bg-surface px-1.5 font-mono text-[0.68rem] text-muted">⌘K</kbd>
+      </button>
+      <button type="button" data-open-search class="button button--sm button--ghost button--icon-only sm:hidden" aria-label="Kërko">
+        <Search className="size-[18px]" />
+      </button>
+      {
+        classroom && (
+          <a href={classroom} target="_blank" rel="noopener noreferrer" class="button button--sm button--secondary hidden gap-1.5 lg:inline-flex">
+            <GraduationCap className="size-4" /> Classroom
+          </a>
+        )
+      }
+      <ThemeToggle client:load />
+      <details class="group relative md:hidden">
+        <summary class="button button--sm button--ghost button--icon-only list-none [&::-webkit-details-marker]:hidden" aria-label="Menyja">
+          <Menu className="size-[18px]" />
+        </summary>
+        <div class="absolute top-12 right-0 w-60 rounded-2xl border border-border bg-overlay p-2 shadow-overlay">
+          {
+            links.map((l) => (
+              <a
+                href={l.href}
+                class={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium ${active(l.href) ? 'bg-accent-soft text-accent' : 'hover:bg-default'}`}
+              >
+                <l.icon className="size-4" />
+                {l.label}
+              </a>
+            ))
+          }
+        </div>
+      </details>
+    </div>
+  </div>
+</header>

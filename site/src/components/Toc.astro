@@ -1,0 +1,69 @@
+---
+/** Sticky table of contents that follows the reader's position. */
+interface Item {
+  id: string;
+  title: string;
+  level?: number;
+  kind?: string;
+}
+interface Props {
+  items: Item[];
+  extra?: Item[];
+}
+const { items, extra = [] } = Astro.props;
+const all = [...items.filter((t) => (t.level ?? 2) <= 3), ...extra];
+const dot: Record<string, string> = {
+  exercise: 'var(--accent)',
+  classwork: 'var(--warning)',
+  homework: 'var(--danger)',
+  reflect: 'var(--brand-3)',
+  theory: 'var(--brand-2)',
+  scenario: 'var(--success)',
+};
+---
+
+{
+  all.length > 0 && (
+    <nav class="toc sticky top-24 max-h-[calc(100dvh-8rem)] overflow-y-auto pr-1" aria-label="Përmbajtja">
+      <p class="mb-3 text-xs font-semibold tracking-wider text-muted uppercase">Përmbajtja</p>
+      <ul class="space-y-0.5 border-l border-separator">
+        {all.map((t) => (
+          <li>
+            <a
+              href={`#${t.id}`}
+              data-toc={t.id}
+              class={`-ml-px flex items-start gap-2 border-l-2 border-transparent py-1 text-[0.8rem] leading-snug text-muted transition-colors hover:text-foreground ${(t.level ?? 2) >= 3 ? 'pl-6' : 'pl-3'}`}
+            >
+              {t.kind && dot[t.kind] && <span class="mt-1.5 size-1.5 shrink-0 rounded-full" style={`background:${dot[t.kind]}`} />}
+              <span class="line-clamp-2">{t.title}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
+
+<script>
+  const links = [...document.querySelectorAll<HTMLAnchorElement>('[data-toc]')];
+  const targets = links.map((a) => document.getElementById(a.dataset.toc!)).filter(Boolean) as HTMLElement[];
+  if (targets.length) {
+    const setActive = (id: string) => {
+      for (const a of links) {
+        const on = a.dataset.toc === id;
+        a.classList.toggle('!border-accent', on);
+        a.classList.toggle('!text-foreground', on);
+        a.classList.toggle('font-medium', on);
+        if (on) a.scrollIntoView({ block: 'nearest' });
+      }
+    };
+    const io = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible[0]) setActive((visible[0].target as HTMLElement).id);
+      },
+      { rootMargin: '-80px 0px -65% 0px' },
+    );
+    targets.forEach((t) => io.observe(t));
+  }
+</script>
