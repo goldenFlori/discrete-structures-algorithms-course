@@ -9,8 +9,9 @@
   {
     "origjinali": "Laborator2 (1).ipynb",
     "publikuar": "laborator-02.ipynb",
-    "sha256": "c0d77c63459c67ffa82deeef7a28849fa92baa44b35c7dbd978c1f8a0477accd",
-    "identik": true
+    "sha256": "43865200158293a1696bf3b52be7f0f06f7b95ca0064bd40fb28e1ec24a34713",
+    "identik": false,
+    "ndryshimi": "Teoria: Quick Sort O(n log n) vetëm mesatarisht; \"Rregulla e artë: n₀\" u zëvendësua. Ushtrimet 3–5 (tre matje kohe të përsëritura, njëra me n = 10 000) u bënë dy: testi i dyfishimit dhe pika e kryqëzimit, e dalluar qartë nga n₀ i përkufizimit (RISHIKIMI.md, Lab 2). Outputi i dy ushtrimeve të reja u rigjenerua."
   },
   {
     "origjinali": "Laborator3 (1).ipynb",
