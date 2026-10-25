@@ -33,8 +33,9 @@
   {
     "origjinali": "Laborator7.ipynb",
     "publikuar": "laborator-07.ipynb",
-    "sha256": "8558f3a9ea0d9c20f9c508be8e6a4019318a81e5227c0f79f006af5e107ae590",
-    "identik": true
+    "sha256": "a5bd882fb9742fb3cc892ca8dde756bbca210c706e038810ae486141f725590c",
+    "identik": false,
+    "ndryshimi": "Punë në Klasë, Problemi 2: brinja C→D ishte dy herë (2 dhe −1) dhe figura nuk përputhej; tani një graf i qartë me cikël negativ −1, 3 iterime + kontrolli, dhe pyetja për brinjën negative në graf të padrejtuar. \"I drejtëzuar\" → \"i drejtuar\" (RISHIKIMI.md, Lab 7). Vetëm tekst."
   },
   {
     "origjinali": "Laborator8.ipynb",
