@@ -15,8 +15,9 @@
   {
     "origjinali": "Laborator3 (1).ipynb",
     "publikuar": "laborator-03.ipynb",
-    "sha256": "d56d44bcba575a9f3f33e98a32698b009951ee25d67d6e375b58ca2f13bb8ec2",
-    "identik": true
+    "sha256": "e814a172221af0c8ad57b37f25202da99c09f35136919cdf06b038abce8d845e",
+    "identik": false,
+    "ndryshimi": "Ushtrimi 2 dhe tabela e lojës (Ushtrimi 4): Merge Sort nuk bën gjithmonë ≈ n·log₂n krahasime; mbi listë të renditur bën rreth gjysmën (RISHIKIMI.md, Lab 3). Vetëm tekst; outputi nuk ndryshon."
   },
   {
     "origjinali": "Laborator4.ipynb",

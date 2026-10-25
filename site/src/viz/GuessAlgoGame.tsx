@@ -38,7 +38,7 @@ function explain(p: Puzzle) {
   const sel = (p.n * (p.n - 1)) / 2;
   const nlog = Math.round(p.n * Math.log2(p.n));
   if (p.algo === 'selection') return `Selection Sort bën **gjithmonë saktësisht n(n−1)/2 = ${sel}** krahasime, pavarësisht nga rendi i listës.`;
-  if (p.algo === 'merge') return `Merge Sort bën afërsisht **n·log₂n ≈ ${nlog}** krahasime (pak më pak), për çdo listë.`;
+  if (p.algo === 'merge') return `Mbi një listë rastësore, Merge Sort bën pak më pak se **n·log₂n ≈ ${nlog}** krahasime. (Mbi një listë të renditur do të bënte rreth gjysmën.)`;
   return `Insertion Sort mbi një listë të rastit bën rreth **n²/4 ≈ ${Math.round((p.n * p.n) / 4)}** krahasime — shumë më pak se ${sel}, por shumë më tepër se ${nlog}.`;
 }
 
@@ -109,7 +109,7 @@ export default function GuessAlgoGame() {
         footer={
           over ? (
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <StepNote text={`Loja mbaroi! Morët **${score} pikë**. Strategjia: n(n−1)/2 → Selection · ≈ n·log₂n → Merge · midis tyre → Insertion.`} tone="success" />
+              <StepNote text={`Loja mbaroi! Morët **${score} pikë**. Strategjia: n(n−1)/2 → Selection · pak më pak se n·log₂n → Merge · midis tyre → Insertion.`} tone="success" />
               <Button onPress={restart}>
                 <RotateCcw /> Luaj sërish
               </Button>
