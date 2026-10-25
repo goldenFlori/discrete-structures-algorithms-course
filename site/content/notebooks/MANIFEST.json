@@ -44,9 +44,9 @@
   {
     "origjinali": "Laborator8.ipynb",
     "publikuar": "laborator-08.ipynb",
-    "sha256": "e03d77b04658fb6bdc540477439cb9b3c6cd24b0fdb186540b927f9fbfc2de7b",
+    "sha256": "73ceb44214b8c99be20d7e5f3fd95b74ac65eb3ecbf3bdeb9e107c86be57c14a",
     "identik": false,
-    "ndryshimi": "U shtua një shënim për konventën e antisimetrisë kundrejt përkufizimit të leksionit (Leksionet 5–6)."
+    "ndryshimi": "U shtua një shënim për konventën e antisimetrisë kundrejt përkufizimit të leksionit (Leksionet 5–6). Ciklet negative te Floyd-Warshall (D[v][v] < 0) me shembull dhe pyetje; krahasimi me Dijkstra nga çdo kulm, O(V·E·log V); pyetje reflektuese 8 (RISHIKIMI.md, Lab 8). Vetëm tekst."
   },
   {
     "origjinali": "Laborator9.ipynb",
