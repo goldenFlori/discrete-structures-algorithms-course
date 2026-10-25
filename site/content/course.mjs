@@ -338,15 +338,15 @@ export const labs = [
         notebook: 'laborator-09-ushtrime-shtese.ipynb',
         note:
           'Leksionet 5–6: rrjedha e lejueshme, kapaciteti i prerjes, pse dështon greedy, rrjeta mbetëse, ' +
-          'rritRrjedhë, FF/EK, shembulli me C, prerja min nga Gf. 8 ushtrime + Punë në Klasë.',
+          'rritRrjedhë, FF/EK, shembulli me C, prerja min nga Gf. 8 ushtrime + Punë në Klasë + 3 detyra shtëpie.',
       },
     ],
     homework: [
       {
         embedded: true,
-        title: '3 detyra: Min-Cut i rrjetit ISP, Ford-Fulkerson dhe Edmonds-Karp mbi rrjetin hekurudhor',
+        title: '3 detyra: rrjeti ISP, DFS kundrejt BFS mbi rrjetin hekurudhor, ku të investojmë',
         anchor: 'detyra-shtepie',
-        note: 'Brenda fletores — ndryshohen vetëm vlerat e shënuara me `# TODO`.',
+        note: 'Në fund të Ushtrimeve Shtesë, mbi funksionet tuaja; çdo detyrë kontrollohet me `kontrollo(...)`.',
       },
     ],
   },
