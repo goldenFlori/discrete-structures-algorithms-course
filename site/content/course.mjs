@@ -266,17 +266,17 @@ export const labs = [
     week: 7,
     lecture: '',
     status: 'published',
-    title: 'Rrugët më të Shkurtra: Dijkstra · Bellman-Ford · Floyd-Warshall',
+    title: 'Rrugët më të Shkurtra nga një Burim: Dijkstra · Bellman-Ford',
     topics: ['rruget', 'dp'],
     summary:
-      'Tre algoritmet kryesore të rrugëve më të shkurtra, kushtet e tyre dhe kompleksiteti. ' +
-      'Nga GPS-i mbi hartën e Shqipërisë te zbulimi i cikleve negative dhe matrica e distancave.',
+      'Dy algoritmet kryesore të rrugëve më të shkurtra nga një burim, kushtet e tyre dhe kompleksiteti. ' +
+      'Nga GPS-i mbi hartën e Shqipërisë te rindërtimi i rrugës dhe zbulimi i cikleve negative me kod.',
     resources: [
       {
         type: 'main',
         title: 'Laboratori 7 — Materiali kryesor',
         notebook: 'laborator-07.ipynb',
-        note: '6 ushtrime Pygame + Punë në Klasë me 4 probleme.',
+        note: '4 ushtrime Pygame + 1 me kontroll automatik (rruga nga prev[], cikli negativ) + Punë në Klasë me 3 probleme.',
       },
       {
         type: 'supplementary',
@@ -304,13 +304,13 @@ export const labs = [
     topics: ['rruget', 'dp', 'rrjedha'],
     summary:
       'Programimi dinamik për të gjitha çiftet e kulmeve, dhe hyrja në rrjedhat maksimale. ' +
-      'Tre skenarë realë: logjistika urbane, rrjeti i klinikave dhe ujësjellësi në emergjencë.',
+      'Matrica e distancave, logjistika urbane, rrjeti i klinikave, gara e rrugëve dhe ujësjellësi në emergjencë.',
     resources: [
       {
         type: 'main',
         title: 'Laboratori 8 — Materiali kryesor',
         notebook: 'laborator-08.ipynb',
-        note: 'Pseudokodi i plotë, matricat D dhe P, 3 skenarë realë + 7 pyetje reflektuese.',
+        note: 'Pseudokodi i plotë, matricat D dhe P, 4 ushtrime Floyd-Warshall (2 nga Lab 7), Edmonds-Karp, Punë në Klasë + 8 pyetje reflektuese.',
       },
     ],
   },
@@ -572,13 +572,13 @@ export const embeds = {
     { cell: 4, viz: 'rruget', title: 'Dijkstra mbi grafin tuaj', props: { preset: 'ndertoni', view: 'dijkstra' } },
     { cell: 6, viz: 'rruget', title: 'Bellman-Ford: rrjeti i dorëzimit', props: { preset: 'dorezimi', view: 'both' } },
     { cell: 8, viz: 'kuizi-bellman-ford', title: 'Kuiz: Bellman-Ford' },
-    { cell: 10, viz: 'floyd-warshall', title: 'Floyd-Warshall: matrica e distancave', props: { preset: 'ush5' } },
-    { cell: 12, viz: 'gara-e-rrugeve', title: 'Lojë: gara e rrugëve' },
   ],
   'laborator-08.ipynb': [
-    { cell: 4, viz: 'floyd-warshall', title: 'Floyd-Warshall: UrbanPost', props: { preset: 'urbanpost' } },
-    { cell: 7, viz: 'floyd-warshall', title: 'Floyd-Warshall: rrjeti mjekësor', props: { preset: 'mjekesor' } },
-    { cell: 11, viz: 'rrjedha-max', title: 'Edmonds-Karp: ujësjellësi', props: { preset: 'ujesjellesi', strategy: 'ek' } },
+    { cell: 3, viz: 'floyd-warshall', title: 'Floyd-Warshall: matrica e distancave', props: { preset: 'ush5' } },
+    { cell: 6, viz: 'floyd-warshall', title: 'Floyd-Warshall: UrbanPost', props: { preset: 'urbanpost' } },
+    { cell: 9, viz: 'floyd-warshall', title: 'Floyd-Warshall: rrjeti mjekësor', props: { preset: 'mjekesor' } },
+    { cell: 11, viz: 'gara-e-rrugeve', title: 'Lojë: gara e rrugëve' },
+    { cell: 16, viz: 'rrjedha-max', title: 'Edmonds-Karp: ujësjellësi', props: { preset: 'ujesjellesi', strategy: 'ek' } },
   ],
   'laborator-09.ipynb': [
     { cell: 2, viz: 'rrjedha-max', title: 'Gjeni prerjen minimale', props: { preset: 'hidranti', mode: 'cut' } },
