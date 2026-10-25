@@ -30,9 +30,9 @@
   {
     "origjinali": "Laborator5 .ipynb",
     "publikuar": "laborator-05.ipynb",
-    "sha256": "bb3ec360ab118a50456072b63160becd8bf99c12e47c98bef5a80eabefe2a41f",
+    "sha256": "d1b5a5690ee942e00d250f98e4062954ba1884d103cdeddc791b2cf1629fcc06",
     "identik": false,
-    "ndryshimi": "Përkufizimi i pemës përfshirëse dhe i MST-së (graf me peshë); vetia e prerjes me idenë e vërtetimit; Punë në Klasë Problemi 3: Prim me dorë; u hoqën titujt e dyfishtë (indekset e vizualizimeve u përditësuan te course.mjs); ë/ç në Ushtrimet 4–6 (RISHIKIMI.md, Lab 5). Vetëm tekst."
+    "ndryshimi": "Përkufizimi i pemës përfshirëse dhe i MST-së (graf me peshë); vetia e prerjes me idenë e vërtetimit; Punë në Klasë Problemi 3: Prim me dorë; u hoqën titujt e dyfishtë (indekset e vizualizimeve u përditësuan te course.mjs); ë/ç në Ushtrimet 4–6 (RISHIKIMI.md, Lab 5). Lab 6: algoritmi i Kosaraju-t dhe algoritmi i Kahn-it, me gjurmim me dorë dhe kompleksitetin krahasuar me qasjen sipas përkufizimit. Vetëm tekst."
   },
   {
     "origjinali": "Laborator7.ipynb",
