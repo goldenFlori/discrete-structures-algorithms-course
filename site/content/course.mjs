@@ -102,7 +102,7 @@ export const labs = [
         type: 'main',
         title: 'Laboratori 1 — Materiali kryesor',
         notebook: 'laborator-01.ipynb',
-        note: 'Teoria + 4 ushtrime (2 Pygame, 2 Plotly/matplotlib).',
+        note: 'Teoria + 4 ushtrime (2 Pygame, 2 Plotly).',
       },
       {
         type: 'supplementary',
@@ -110,7 +110,7 @@ export const labs = [
         notebook: 'laborator-01-ushtrime-shtese.ipynb',
         note:
           'Leksioni 1 (slides 17–45): pseudokodi rresht për rresht, hipoteza e induksionit si assert, ' +
-          'pse testet nuk vërtetojnë, inputi më i keq. 5 ushtrime me kontroll automatik + Punë në Klasë.',
+          'pse testet nuk vërtetojnë, inputi më i keq, qëndrueshmëria. 6 ushtrime me kontroll automatik + Punë në Klasë.',
       },
     ],
     // C-1 (docs/ANALYSIS.md): Ushtrimi 2 u rishkrua në Plotly — gabimi `NameError` u korrigjua.

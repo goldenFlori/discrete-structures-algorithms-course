@@ -2,9 +2,9 @@
   {
     "origjinali": "Laborator1.ipynb",
     "publikuar": "laborator-01.ipynb",
-    "sha256": "6e0791651fe1a90ba7470cfdfd7221ca3c818970c26a95c1235dfe2c3a33651b",
+    "sha256": "df0c8bd21e2b5ea406ee12208a88bd9773b358dfc780a3d3bbe74f8e3656c604",
     "identik": false,
-    "ndryshimi": "Ushtrimi 2 u rishkrua në Plotly (korrigjon NameError, C-1), me listë parazgjedhje 200 elemente që trendi të duket; outputi u rigjenerua."
+    "ndryshimi": "Ushtrimi 2 u rishkrua në Plotly (korrigjon NameError, C-1), me listë parazgjedhje 200 elemente që trendi të duket; outputi u rigjenerua. Ushtrimi 4 me Plotly (hover funksionon në shfletues) dhe matje të përsëritura, në një grafik log-log me të gjashtë rastet; përfundimet e saktësuara (RISHIKIMI.md, Lab 1)."
   },
   {
     "origjinali": "Laborator2 (1).ipynb",
@@ -94,9 +94,9 @@
   {
     "origjinali": null,
     "publikuar": "laborator-01-ushtrime-shtese.ipynb",
-    "sha256": "79d2655b43e04dc78e13d0c62168478bfb66c2c0bb920c6257b7b7609dcb0b7b",
-    "identik": null,
-    "ndryshimi": "Fletore e re, e ndërtuar sipas Leksioni 1 të materials/Leksione-Slides."
+    "sha256": "0213280f3bc218ac7612f08d653c9993c1d5874c5ed072bae28b933e3c679098",
+    "identik": false,
+    "ndryshimi": "Fletore e re, e ndërtuar sipas Leksioni 1 të materials/Leksione-Slides. U shtua Ushtrimi 6 — Qëndrueshmëria: eshte_i_qendrueshem(...) me kontrollo; Insertion i qëndrueshëm, Selection jo me [(2,'a'), (2,'b'), (1,'c')] (RISHIKIMI.md, Lab 1)."
   },
   {
     "origjinali": null,
