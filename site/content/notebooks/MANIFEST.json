@@ -51,9 +51,9 @@
   {
     "origjinali": "Laborator9.ipynb",
     "publikuar": "laborator-09.ipynb",
-    "sha256": "46c6c54177912e97f1bd1c215f269d7923edaac4def6253ffb79cd0b3cd240c4",
+    "sha256": "51c56775c6586feaa6329026d0dd45c02dc567b7613915752ae3a59a27666d0a",
     "identik": false,
-    "ndryshimi": "\"kulm (sink)\" → \"derdhje (sink)\" sipas terminologjisë së leksionit; shënim për antisimetrinë."
+    "ndryshimi": "\"kulm (sink)\" → \"derdhje (sink)\" sipas terminologjisë së leksionit; shënim për antisimetrinë. Detyrat e shtëpisë u zhvendosën te Ushtrimet Shtesë, mbi funksionet e studentit me kontrollo(...), në vend të kopjimit të kodit Pygame (RISHIKIMI.md, Lab 9)."
   },
   {
     "origjinali": "dijkstra_animated.ipynb",
@@ -122,9 +122,9 @@
   {
     "origjinali": null,
     "publikuar": "laborator-09-ushtrime-shtese.ipynb",
-    "sha256": "101871ee7c8d0abb663f0f432f5424ab742915db70876886cd3e7338b048b11d",
-    "identik": null,
-    "ndryshimi": "Fletore e re, e ndërtuar sipas Leksionet 5–6 të materials/Leksione-Slides."
+    "sha256": "d5b173507b6ca6cd0acde0a9156cd5e3aa611f30416b36d3f8fc9d90eab801e9",
+    "identik": false,
+    "ndryshimi": "Fletore e re, e ndërtuar sipas Leksionet 5–6 të materials/Leksione-Slides. U shtuan 3 detyra shtëpie (rrjeti ISP, rrjeti hekurudhor DFS/BFS, ku të investojmë) me kontrollo(...) që vërteton rrjedhën max pa treguar përgjigjen (RISHIKIMI.md, Lab 9)."
   },
   {
     "origjinali": null,
