@@ -64,8 +64,9 @@
   {
     "origjinali": "bellmanFord_animated.ipynb",
     "publikuar": "bellman-ford-animated.ipynb",
-    "sha256": "4cd3c8e51e535b57f6cee0421535a3b4a7ed552b3959c2331174ddca59a89069",
-    "identik": true
+    "sha256": "76ee07aec6f41e12d7d75eb805cd4ed2264d94a6ff36860f696398dff793e0c9",
+    "identik": false,
+    "ndryshimi": "U ekzekutua për herë të parë, që daljet dhe figurat të shfaqen si te fletorja e Dijkstra-s; qeliza që hap dritaren Pygame u ekzekutua pa e hapur dritaren. Kodi nuk ndryshoi."
   },
   {
     "origjinali": "detyra2_algoritme.ipynb",
