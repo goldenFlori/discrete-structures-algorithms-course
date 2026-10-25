@@ -23,8 +23,9 @@
   {
     "origjinali": "Laborator4.ipynb",
     "publikuar": "laborator-04.ipynb",
-    "sha256": "48db0a6e1c27d463c12f31454ba098b0d1940be2abf290f6a128cd288301891a",
-    "identik": true
+    "sha256": "86c9c5b21746384f0d0363ded4930719ccb2bd72e9942db522b0d68cb8642596",
+    "identik": false,
+    "ndryshimi": "Brinjët e padrejtuara si bashkësi {u, v}; laku numërohet dy herë dhe Σ deg(v) = 2|E|; përkufizimet e bashkësisë së pavarur, klikës dhe grafit dyanësor; krahasimi i paraqitjeve në kohë; ë/ç; u hoq qeliza e fundit bosh (RISHIKIMI.md, Lab 4). Vetëm tekst."
   },
   {
     "origjinali": "Laborator5 .ipynb",
