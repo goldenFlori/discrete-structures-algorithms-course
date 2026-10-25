@@ -560,12 +560,12 @@ export const embeds = {
     { cell: 8, viz: 'grafet', title: 'Lista dhe matrica e fqinjësisë', props: { mode: 'repr', preset: 'digraf' } },
   ],
   'laborator-05.ipynb': [
-    { cell: 3, viz: 'labirinti', title: 'Labirinti me BFS dhe DFS' },
-    { cell: 6, viz: 'grafet', title: 'BFS dhe DFS në grafin tuaj', props: { mode: 'traverse', preset: 'klase1' } },
-    { cell: 9, viz: 'grafet', title: 'Kruskal dhe Prim', props: { mode: 'mst', preset: 'mst8' } },
-    { cell: 12, viz: 'scc-topologjike', title: 'Komponentet e lidhura fort', props: { mode: 'scc', preset: 'lab' } },
-    { cell: 15, viz: 'scc-topologjike', title: 'Renditja topologjike e lëndëve', props: { mode: 'topo', preset: 'lendet' } },
-    { cell: 18, viz: 'scc-topologjike', title: 'Lojë: renditja topologjike', props: { mode: 'topo', preset: 'shtepia' } },
+    { cell: 2, viz: 'labirinti', title: 'Labirinti me BFS dhe DFS' },
+    { cell: 4, viz: 'grafet', title: 'BFS dhe DFS në grafin tuaj', props: { mode: 'traverse', preset: 'klase1' } },
+    { cell: 6, viz: 'grafet', title: 'Kruskal dhe Prim', props: { mode: 'mst', preset: 'mst8' } },
+    { cell: 8, viz: 'scc-topologjike', title: 'Komponentet e lidhura fort', props: { mode: 'scc', preset: 'lab' } },
+    { cell: 10, viz: 'scc-topologjike', title: 'Renditja topologjike e lëndëve', props: { mode: 'topo', preset: 'lendet' } },
+    { cell: 12, viz: 'scc-topologjike', title: 'Lojë: renditja topologjike', props: { mode: 'topo', preset: 'shtepia' } },
   ],
   'laborator-07.ipynb': [
     { cell: 2, viz: 'rruget', title: 'GPS: harta e Shqipërisë', props: { preset: 'shqiperia', view: 'dijkstra' } },
