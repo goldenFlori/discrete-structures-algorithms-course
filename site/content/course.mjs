@@ -328,6 +328,14 @@ export const labs = [
         notebook: 'laborator-08.ipynb',
         note: 'Pseudokodi i plotë, matricat D dhe P, 4 ushtrime Floyd-Warshall (2 nga Lab 7), Edmonds-Karp, Punë në Klasë + 8 pyetje reflektuese.',
       },
+      {
+        type: 'supplementary',
+        title: 'Ushtrime Shtesë — Floyd-Warshall në kod',
+        notebook: 'laborator-08-ushtrime-shtese.ipynb',
+        note:
+          'Matrica e peshave, Floyd-Warshall me hapin tjetër, rindërtimi i rrugës, ciklet negative, ' +
+          'mbyllja kalimtare (Warshall) dhe Dijkstra nga çdo kulm. 6 ushtrime me kontroll automatik + Punë në Klasë.',
+      },
     ],
   },
 

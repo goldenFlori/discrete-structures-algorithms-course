@@ -63,6 +63,13 @@
     "ndryshimi": "U shtua një shënim për konventën e antisimetrisë kundrejt përkufizimit të leksionit (Leksionet 5–6). Ciklet negative te Floyd-Warshall (D[v][v] < 0) me shembull dhe pyetje; krahasimi me Dijkstra nga çdo kulm, O(V·E·log V); pyetje reflektuese 8 (RISHIKIMI.md, Lab 8). Vetëm tekst. Mori nga Laboratori 7 Ushtrimet e Floyd-Warshall (matrica e distancave, gara e rrugëve, me shënim për dy konventat e P) dhe Punën në Klasë me dorë; ushtrimet u rinumëruan (RISHIKIMI.md, Lab 7)."
   },
   {
+    "origjinali": null,
+    "publikuar": "laborator-08-ushtrime-shtese.ipynb",
+    "sha256": "f8414d6096cf388e34490a0e565c790c62ffa84c7baf5ea9a5075ad58012e0f5",
+    "identik": false,
+    "ndryshimi": "Fletore e re: Floyd-Warshall me rrugët, ciklet negative, mbyllja kalimtare dhe Dijkstra nga çdo kulm në kod, me kontrollo(...)."
+  },
+  {
     "origjinali": "Laborator9.ipynb",
     "publikuar": "laborator-09.ipynb",
     "sha256": "51c56775c6586feaa6329026d0dd45c02dc567b7613915752ae3a59a27666d0a",
