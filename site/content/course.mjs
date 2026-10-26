@@ -266,6 +266,14 @@ export const labs = [
         sections: { ranges: [['ushtrimi-4-komponentet-e-lidhura-fort', 'pune-ne-klase']] },
         note: 'SCC, Renditjet Topologjike dhe loja interaktive e renditjes topologjike.',
       },
+      {
+        type: 'supplementary',
+        title: 'Ushtrime Shtesë — Kahn, DFS dhe Kosaraju në kod',
+        notebook: 'laborator-06-ushtrime-shtese.ipynb',
+        note:
+          'Kontrolli i një renditjeje, Kahn me zbulimin e ciklit, renditja nga DFS, numri i renditjeve, ' +
+          'grafi i transpozuar, Kosaraju dhe grafi i kondensuar. 7 ushtrime me kontroll automatik + Punë në Klasë.',
+      },
     ],
   },
 

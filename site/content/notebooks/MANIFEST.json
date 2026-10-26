@@ -42,6 +42,13 @@
     "ndryshimi": "Fletore e re: BFS, DFS, bashkësitë disjunkte, Kruskal dhe Prim në kod, me kontrollo(...)."
   },
   {
+    "origjinali": null,
+    "publikuar": "laborator-06-ushtrime-shtese.ipynb",
+    "sha256": "a7aaac99e591c91411925b59f2971897e101b7c0396f192737572c057da7c93c",
+    "identik": false,
+    "ndryshimi": "Fletore e re: renditja topologjike (Kahn, DFS, numri i renditjeve) dhe KLF-të (Kosaraju, grafi i kondensuar) në kod, me kontrollo(...)."
+  },
+  {
     "origjinali": "Laborator7.ipynb",
     "publikuar": "laborator-07.ipynb",
     "sha256": "ca71e5db1d0b4670b499f200e740a5c0202b898677bddf61dd57af9bda4b23f2",

@@ -17,6 +17,7 @@
 | `laborator-03-ushtrime-shtese.ipynb` | 3 | L3 | logaritmi si përgjysmime, pema rekursive e matur, induksioni i fortë në çdo thirrje, rasti bazë i gabuar |
 | `laborator-04-ushtrime-shtese.ipynb` | 4 | L4 (i plotë) | Königsberg/Euler, lema e shtrëngimit të duarve, $K_n$, $\overline G$, $Q_3$, nëngrafet, paraqitjet, ecjet, diametri, KLF |
 | `laborator-05-ushtrime-shtese.ipynb` | 5 | — (vetëm laborator) | BFS me largesat dhe shtegun, komponentet, grafi dyanësor, DFS me kohët dhe vetia e kllapave, bashkësitë disjunkte, Kruskal, Prim |
+| `laborator-06-ushtrime-shtese.ipynb` | 6 | L4 (slides 72–73) | kontrolli i një renditjeje topologjike, Kahn me zbulimin e ciklit, renditja nga DFS, numri i renditjeve, $G^T$, Kosaraju, grafi i kondensuar |
 | `laborator-09-ushtrime-shtese.ipynb` | 9 | L5–6 (slides 2–79) | rrjedha e lejueshme, prerja, greedy që dështon, $G_f$, `rritRrjedhë`, FF/EK, shembulli me $C$, prerja min nga $G_f$ |
 | `laborator-10.ipynb` *(i ri)* | 10 | L5–6 (slides 80–90) | çiftëzimi dyanësor (vajzat/kotelet), caktimi (lulet/buqetat), modelim i lirë |
 
