@@ -51,9 +51,9 @@
   {
     "origjinali": "Laborator7.ipynb",
     "publikuar": "laborator-07.ipynb",
-    "sha256": "ca71e5db1d0b4670b499f200e740a5c0202b898677bddf61dd57af9bda4b23f2",
+    "sha256": "f39c11f5422b96dd07adccce23119168dc89b0061662bbd29e884d9fdaaf053b",
     "identik": false,
-    "ndryshimi": "Punë në Klasë, Problemi 2: brinja C→D ishte dy herë (2 dhe −1) dhe figura nuk përputhej; tani një graf i qartë me cikël negativ −1, 3 iterime + kontrolli, dhe pyetja për brinjën negative në graf të padrejtuar. \"I drejtëzuar\" → \"i drejtuar\" (RISHIKIMI.md, Lab 7). Vetëm tekst. Floyd-Warshall (Ushtrimet 5–6 dhe Problemi 3) u zhvendos te Laboratori 8; Lab 7 përqendrohet te rrugët nga një burim. Hyrja u rishkrua me ë/ç; Ushtrimi 5 i ri me kontrollo: rruga(prev, s, t) dhe ka_cikel_negativ(...) (RISHIKIMI.md, Lab 7)."
+    "ndryshimi": "Punë në Klasë, Problemi 2: brinja C→D ishte dy herë (2 dhe −1) dhe figura nuk përputhej; tani një graf i qartë me cikël negativ −1, 3 iterime + kontrolli, dhe pyetja për brinjën negative në graf të padrejtuar. \"I drejtëzuar\" → \"i drejtuar\" (RISHIKIMI.md, Lab 7). Vetëm tekst. Floyd-Warshall (Ushtrimet 5–6 dhe Problemi 3) u zhvendos te Laboratori 8; Lab 7 përqendrohet te rrugët nga një burim. Hyrja u rishkrua me ë/ç; Ushtrimi 5 i ri me kontrollo: rruga(prev, s, t) dhe ka_cikel_negativ(...) (RISHIKIMI.md, Lab 7). Puna në Klasë u nda në një qelizë për çdo problem, që platforma të vendosë tabelën e gjurmimit te secili."
   },
   {
     "origjinali": "Laborator8.ipynb",
