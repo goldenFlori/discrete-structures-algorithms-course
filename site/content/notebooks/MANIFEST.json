@@ -35,6 +35,13 @@
     "ndryshimi": "Përkufizimi i pemës përfshirëse dhe i MST-së (graf me peshë); vetia e prerjes me idenë e vërtetimit; Punë në Klasë Problemi 3: Prim me dorë; u hoqën titujt e dyfishtë (indekset e vizualizimeve u përditësuan te course.mjs); ë/ç në Ushtrimet 4–6 (RISHIKIMI.md, Lab 5). Lab 6: algoritmi i Kosaraju-t dhe algoritmi i Kahn-it, me gjurmim me dorë dhe kompleksitetin krahasuar me qasjen sipas përkufizimit. Vetëm tekst."
   },
   {
+    "origjinali": null,
+    "publikuar": "laborator-05-ushtrime-shtese.ipynb",
+    "sha256": "0239a9b23be9d7e28bf8a34f84f2c4a420565fccec15164a4da68edda7a4e72f",
+    "identik": false,
+    "ndryshimi": "Fletore e re: BFS, DFS, bashkësitë disjunkte, Kruskal dhe Prim në kod, me kontrollo(...)."
+  },
+  {
     "origjinali": "Laborator7.ipynb",
     "publikuar": "laborator-07.ipynb",
     "sha256": "ca71e5db1d0b4670b499f200e740a5c0202b898677bddf61dd57af9bda4b23f2",

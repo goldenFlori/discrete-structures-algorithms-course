@@ -227,6 +227,14 @@ export const labs = [
         },
         note: 'Ushtrimet 1–3, Punë në Klasë dhe Detyrat e Shtëpisë.',
       },
+      {
+        type: 'supplementary',
+        title: 'Ushtrime Shtesë — BFS, DFS, Kruskal dhe Prim në kod',
+        notebook: 'laborator-05-ushtrime-shtese.ipynb',
+        note:
+          'BFS me largesat dhe shtegun, komponentet, grafi dyanësor, DFS me kohët, bashkësitë disjunkte, ' +
+          'Kruskal dhe Prim. 8 ushtrime me kontroll automatik + Punë në Klasë.',
+      },
     ],
     homework: [
       {
